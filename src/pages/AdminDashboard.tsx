@@ -23,6 +23,8 @@ interface DashboardStats {
   recentBookings: any[]
   pendingQueries: any[]
   newContacts: any[]
+  allQueries: any[]
+  allContacts: any[]
 }
 
 export function AdminDashboard() {
@@ -53,11 +55,30 @@ export function AdminDashboard() {
         supabase.from('article_views').select('*')
       ])
 
+      console.log('Fetched data:', {
+        bookings: bookingsRes.data?.length || 0,
+        queries: queriesRes.data?.length || 0,
+        contacts: contactsRes.data?.length || 0,
+        articles: articlesRes.data?.length || 0,
+        views: viewsRes.data?.length || 0
+      })
+
       const bookings = bookingsRes.data || []
       const queries = queriesRes.data || []
       const contacts = contactsRes.data || []
       const articles = articlesRes.data || []
       const views = viewsRes.data || []
+
+      // Filter pending queries and new contacts
+      const pendingQueries = queries.filter(q => q.status === 'pending')
+      const newContacts = contacts.filter(c => c.status === 'new')
+
+      console.log('Filtered data:', {
+        pendingQueries: pendingQueries.length,
+        newContacts: newContacts.length,
+        totalQueries: queries.length,
+        totalContacts: contacts.length
+      })
 
       setStats({
         totalBookings: bookings.length,
@@ -67,8 +88,10 @@ export function AdminDashboard() {
         publishedArticles: articles.filter(a => a.status === 'published').length,
         totalViews: views.length,
         recentBookings: bookings.slice(0, 5),
-        pendingQueries: queries.filter(q => q.status === 'pending').slice(0, 5),
-        newContacts: contacts.filter(c => c.status === 'new').slice(0, 5)
+        pendingQueries: pendingQueries.slice(0, 10), // Show more pending queries
+        newContacts: newContacts.slice(0, 10), // Show more new contacts
+        allQueries: queries, // Store all queries for the queries tab
+        allContacts: contacts // Store all contacts for the contacts tab
       })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -218,47 +241,63 @@ export function AdminDashboard() {
               <div className="card p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Bookings</h3>
                 <div className="space-y-3">
-                  {stats.recentBookings.map((booking) => (
-                    <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{booking.first_name} {booking.last_name}</p>
-                        <p className="text-sm text-gray-600">{booking.class_name}</p>
+                  {stats.recentBookings.length > 0 ? (
+                    stats.recentBookings.map((booking) => (
+                      <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-900">{booking.first_name} {booking.last_name}</p>
+                          <p className="text-sm text-gray-600">{booking.class_name}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {booking.status}
+                        </span>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {booking.status}
-                      </span>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No recent bookings</p>
+                  )}
                 </div>
               </div>
 
               {/* Pending Queries */}
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pending Queries</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Pending Queries ({stats.pendingQueries.length})
+                </h3>
                 <div className="space-y-3">
-                  {stats.pendingQueries.map((query) => (
-                    <div key={query.id} className="p-3 bg-orange-50 rounded-lg">
-                      <p className="font-medium text-gray-900">{query.name}</p>
-                      <p className="text-sm text-gray-600 truncate">{query.subject}</p>
-                      <p className="text-xs text-orange-600 mt-1">Needs response</p>
-                    </div>
-                  ))}
+                  {stats.pendingQueries.length > 0 ? (
+                    stats.pendingQueries.map((query) => (
+                      <div key={query.id} className="p-3 bg-orange-50 rounded-lg">
+                        <p className="font-medium text-gray-900">{query.name}</p>
+                        <p className="text-sm text-gray-600 truncate">{query.subject}</p>
+                        <p className="text-xs text-orange-600 mt-1">Needs response</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No pending queries</p>
+                  )}
                 </div>
               </div>
 
               {/* New Contacts */}
               <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">New Contact Messages</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  New Contact Messages ({stats.newContacts.length})
+                </h3>
                 <div className="space-y-3">
-                  {stats.newContacts.map((contact) => (
-                    <div key={contact.id} className="p-3 bg-purple-50 rounded-lg">
-                      <p className="font-medium text-gray-900">{contact.name}</p>
-                      <p className="text-sm text-gray-600 truncate">{contact.subject}</p>
-                      <p className="text-xs text-purple-600 mt-1">New message</p>
-                    </div>
-                  ))}
+                  {stats.newContacts.length > 0 ? (
+                    stats.newContacts.map((contact) => (
+                      <div key={contact.id} className="p-3 bg-purple-50 rounded-lg">
+                        <p className="font-medium text-gray-900">{contact.name}</p>
+                        <p className="text-sm text-gray-600 truncate">{contact.subject}</p>
+                        <p className="text-xs text-purple-600 mt-1">New message</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm">No new contact messages</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -334,57 +373,69 @@ export function AdminDashboard() {
 
         {activeTab === 'queries' && (
           <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Yoga Queries</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Yoga Queries ({stats.allQueries.length} total)
+            </h2>
             <div className="space-y-4">
-              {stats.pendingQueries.concat(stats.totalQueries > 5 ? [] : []).map((query) => (
-                <div key={query.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{query.subject}</h3>
-                      <p className="text-sm text-gray-600">From: {query.name} ({query.email})</p>
+              {stats.allQueries.length > 0 ? (
+                stats.allQueries.map((query) => (
+                  <div key={query.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{query.subject}</h3>
+                        <p className="text-sm text-gray-600">From: {query.name} ({query.email})</p>
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        query.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
+                      }`}>
+                        {query.status}
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      query.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {query.status}
-                    </span>
+                    <p className="text-gray-700 mb-2">{query.message}</p>
+                    <div className="flex justify-between items-center text-sm text-gray-500">
+                      <span>Category: {query.category}</span>
+                      <span>Experience: {query.experience_level}</span>
+                      <span>{new Date(query.created_at).toLocaleDateString()}</span>
+                    </div>
                   </div>
-                  <p className="text-gray-700 mb-2">{query.message}</p>
-                  <div className="flex justify-between items-center text-sm text-gray-500">
-                    <span>Category: {query.category}</span>
-                    <span>Experience: {query.experience_level}</span>
-                    <span>{new Date(query.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500">No yoga queries found</p>
+              )}
             </div>
           </div>
         )}
 
         {activeTab === 'contacts' && (
           <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Messages</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Contact Messages ({stats.allContacts.length} total)
+            </h2>
             <div className="space-y-4">
-              {stats.newContacts.map((contact) => (
-                <div key={contact.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{contact.subject}</h3>
-                      <p className="text-sm text-gray-600">From: {contact.name} ({contact.email})</p>
-                      {contact.phone && <p className="text-sm text-gray-600">Phone: {contact.phone}</p>}
+              {stats.allContacts.length > 0 ? (
+                stats.allContacts.map((contact) => (
+                  <div key={contact.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{contact.subject}</h3>
+                        <p className="text-sm text-gray-600">From: {contact.name} ({contact.email})</p>
+                        {contact.phone && <p className="text-sm text-gray-600">Phone: {contact.phone}</p>}
+                      </div>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        contact.status === 'new' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {contact.status}
+                      </span>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      contact.status === 'new' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {contact.status}
-                    </span>
+                    <p className="text-gray-700 mb-2">{contact.message}</p>
+                    <div className="text-sm text-gray-500">
+                      {new Date(contact.created_at).toLocaleDateString()}
+                    </div>
                   </div>
-                  <p className="text-gray-700 mb-2">{contact.message}</p>
-                  <div className="text-sm text-gray-500">
-                    {new Date(contact.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500">No contact messages found</p>
+              )}
             </div>
           </div>
         )}

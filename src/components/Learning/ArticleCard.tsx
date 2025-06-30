@@ -53,6 +53,9 @@ export function ArticleCard({ article }: ArticleCardProps) {
               alt={article.title}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
               loading="lazy"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+              }}
             />
           )}
           <div className="absolute top-4 left-4">
@@ -103,7 +106,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
             </button>
           </div>
           
-          {article.tags.length > 0 && (
+          {article.tags && article.tags.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex flex-wrap gap-2">
                 {article.tags.slice(0, 3).map((tag, index) => (

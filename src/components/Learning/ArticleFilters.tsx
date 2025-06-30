@@ -46,6 +46,8 @@ export function ArticleFilters({
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              id="article-search"
+              name="article-search"
             />
           </div>
         </div>
@@ -58,6 +60,8 @@ export function ArticleFilters({
               value={selectedCategory}
               onChange={(e) => onCategoryChange(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+              id="category-filter"
+              name="category-filter"
             >
               {categories.map(category => (
                 <option key={category.value} value={category.value}>
@@ -74,6 +78,8 @@ export function ArticleFilters({
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value as any)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+            id="sort-filter"
+            name="sort-filter"
           >
             {sortOptions.map(option => (
               <option key={option.value} value={option.value}>

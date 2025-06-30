@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { ArticleWithStats } from '../types/article'
 
@@ -7,7 +7,7 @@ export function useArticles() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchArticles = async (filters?: {
+  const fetchArticles = useCallback(async (filters?: {
     category?: string
     sortBy?: 'latest' | 'popular' | 'highest_rated'
     limit?: number
@@ -15,6 +15,8 @@ export function useArticles() {
     try {
       setLoading(true)
       setError(null)
+
+      console.log('Fetching articles with filters:', filters)
 
       let query = supabase
         .from('articles')
@@ -47,7 +49,12 @@ export function useArticles() {
 
       const { data, error: fetchError } = await query
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('Supabase error:', fetchError)
+        throw fetchError
+      }
+
+      console.log('Raw articles data:', data)
 
       // Calculate ratings for each article
       const articlesWithStats: ArticleWithStats[] = data?.map(article => {
@@ -74,17 +81,19 @@ export function useArticles() {
         })
       }
 
+      console.log('Processed articles:', articlesWithStats)
       setArticles(articlesWithStats)
     } catch (err: any) {
+      console.error('Error in fetchArticles:', err)
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchArticles()
-  }, [])
+  }, [fetchArticles])
 
   return {
     articles,

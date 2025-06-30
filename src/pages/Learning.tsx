@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { BookOpen, TrendingUp, Award } from 'lucide-react'
 import { ArticleCard } from '../components/Learning/ArticleCard'
 import { ArticleFilters } from '../components/Learning/ArticleFilters'
@@ -12,19 +12,21 @@ export function Learning() {
   
   const { articles, loading, error, refetch } = useArticles()
 
-  // Filter articles based on search term
-  const filteredArticles = articles.filter(article => {
-    const matchesSearch = searchTerm === '' || 
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.preview_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    
-    const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory
-    
-    return matchesSearch && matchesCategory
-  })
+  // Memoize filtered articles to prevent unnecessary re-renders
+  const filteredArticles = useMemo(() => {
+    return articles.filter(article => {
+      const matchesSearch = searchTerm === '' || 
+        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.preview_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      
+      const matchesCategory = selectedCategory === 'all' || article.category === selectedCategory
+      
+      return matchesSearch && matchesCategory
+    })
+  }, [articles, searchTerm, selectedCategory])
 
-  // Refetch when filters change
+  // Refetch when filters change (but not search term)
   useEffect(() => {
     refetch({
       category: selectedCategory,
@@ -32,7 +34,8 @@ export function Learning() {
     })
   }, [selectedCategory, sortBy, refetch])
 
-  const stats = [
+  // Memoize stats to prevent recalculation
+  const stats = useMemo(() => [
     {
       icon: <BookOpen className="w-8 h-8 text-blue-600" />,
       title: "Total Articles",
@@ -51,7 +54,7 @@ export function Learning() {
       value: articles.length > 0 ? Math.max(...articles.map(a => a.average_rating)).toFixed(1) : "0",
       description: "Average rating"
     }
-  ]
+  ], [articles])
 
   if (error) {
     return (

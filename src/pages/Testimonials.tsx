@@ -7,7 +7,7 @@ export function Testimonials() {
       position: "Marketing Director",
       company: "TechCorp Inc.",
       location: "New York, USA",
-      content: "Yogodaan has completely transformed how our team approaches wellness. The corporate sessions have not only reduced stress levels but also improved our overall productivity and team cohesion. The instructor's ability to adapt sessions for our busy schedules is remarkable.",
+      content: "Yogodyaan has completely transformed how our team approaches wellness. The corporate sessions have not only reduced stress levels but also improved our overall productivity and team cohesion. The instructor's ability to adapt sessions for our busy schedules is remarkable.",
       image: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop",
       rating: 5,
       type: "Corporate"
@@ -97,7 +97,7 @@ export function Testimonials() {
           <h1 className="text-5xl font-bold text-gray-900 mb-6">What Our Global Community Says</h1>
           <p className="text-xl text-gray-600 leading-relaxed">
             Real stories from professionals around the world who have transformed their lives 
-            with Yogodaan's personalized wellness programs.
+            with Yogodyaan's personalized wellness programs.
           </p>
         </div>
       </section>

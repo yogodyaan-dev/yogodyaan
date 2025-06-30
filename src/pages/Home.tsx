@@ -52,7 +52,7 @@ export function Home() {
       name: "Sarah Johnson",
       position: "Marketing Director",
       location: "New York, USA",
-      content: "Yogodaan has transformed how our team approaches wellness. The corporate sessions have reduced stress and improved our overall productivity.",
+      content: "Yogodyaan has transformed how our team approaches wellness. The corporate sessions have reduced stress and improved our overall productivity.",
       image: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop"
     },
     {
@@ -85,7 +85,7 @@ export function Home() {
                   <span className="block text-green-600">and Body — Online</span>
                 </h1>
                 <p className="text-xl text-gray-600 leading-relaxed">
-                  Yogodaan brings personalized corporate and wellness yoga programs 
+                  Yogodyaan brings personalized corporate and wellness yoga programs 
                   to professionals worldwide. Experience the power of yoga from anywhere.
                 </p>
               </div>
@@ -224,11 +224,11 @@ export function Home() {
         </div>
       </section>
 
-      {/* Why Choose Yogodaan */}
+      {/* Why Choose Yogodyaan */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Choose Yogodaan</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Choose Yogodyaan</h2>
             <p className="text-xl text-gray-600">
               Experience the difference with our unique approach to online yoga
             </p>
@@ -254,7 +254,7 @@ export function Home() {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">What Our Global Community Says</h2>
             <p className="text-xl text-gray-600">
-              Real stories from professionals who transformed their lives with Yogodaan
+              Real stories from professionals who transformed their lives with Yogodyaan
             </p>
           </div>
           

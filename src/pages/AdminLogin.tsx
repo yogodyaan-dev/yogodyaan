@@ -61,7 +61,7 @@ export function AdminLogin() {
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-xl">Y</span>
             </div>
-            <span className="text-3xl font-bold text-gradient">Yogodaan</span>
+            <span className="text-3xl font-bold text-gradient">Yogodyaan</span>
           </Link>
           <div className="flex items-center justify-center mb-4">
             <Shield className="w-8 h-8 text-emerald-600 mr-2" />

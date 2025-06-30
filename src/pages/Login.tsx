@@ -73,7 +73,7 @@ export function Login() {
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-xl">Y</span>
             </div>
-            <span className="text-3xl font-bold text-gradient">Yogodaan</span>
+            <span className="text-3xl font-bold text-gradient">Yogodyaan</span>
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">
             {isSignUp ? 'Create your account' : 'Sign in to your account'}

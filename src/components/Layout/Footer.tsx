@@ -12,7 +12,7 @@ export function Footer() {
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-lg">Y</span>
               </div>
-              <span className="text-2xl font-bold">Yogodaan</span>
+              <span className="text-2xl font-bold">Yogodyaan</span>
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
               Transform your life through the ancient practice of yoga. Join our community and discover inner peace, strength, and wellness.
@@ -48,7 +48,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center space-x-2">
                 <Mail size={16} className="text-emerald-400" />
-                <span className="text-gray-300">info@yogodaan.com</span>
+                <span className="text-gray-300">info@yogodyaan.com</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone size={16} className="text-emerald-400" />
@@ -64,7 +64,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            © 2024 Yogodaan. All rights reserved. Made with ❤️ for your wellness journey.
+            © 2024 Yogodyaan. All rights reserved. Made with ❤️ for your wellness journey.
           </p>
         </div>
       </div>

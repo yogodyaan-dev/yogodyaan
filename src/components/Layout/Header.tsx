@@ -29,7 +29,7 @@ export function Header() {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-lg">Y</span>
             </div>
-            <span className="text-2xl font-bold text-gray-900">Yogodaan</span>
+            <span className="text-2xl font-bold text-gray-900">Yogodyaan</span>
           </Link>
 
           {/* Desktop Navigation */}

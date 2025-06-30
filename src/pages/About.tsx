@@ -31,7 +31,7 @@ export function About() {
       experience: "15+ years",
       specialization: "Hatha & Vinyasa Yoga",
       image: "https://images.pexels.com/photos/3823488/pexels-photo-3823488.jpeg?auto=compress&cs=tinysrgb&w=300&h=300&fit=crop",
-      bio: "Priya founded Yogodaan with a vision to make authentic yoga accessible to everyone. Trained in India and certified in multiple yoga styles."
+      bio: "Priya founded Yogodyaan with a vision to make authentic yoga accessible to everyone. Trained in India and certified in multiple yoga styles."
     },
     {
       name: "David Thompson",
@@ -56,7 +56,7 @@ export function About() {
       {/* Hero Section */}
       <section className="gradient-bg text-white py-20">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl font-bold mb-6">About Yogodaan</h1>
+          <h1 className="text-5xl font-bold mb-6">About Yogodyaan</h1>
           <p className="text-xl text-emerald-100">
             Dedicated to spreading the transformative power of yoga and creating a community 
             where everyone can find their path to wellness and inner peace.
@@ -72,12 +72,12 @@ export function About() {
               <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-700">
                 <p>
-                  Yogodaan was born from a simple belief: that yoga has the power to transform lives. 
+                  Yogodyaan was born from a simple belief: that yoga has the power to transform lives. 
                   Founded in 2015 by Priya Sharma, our studio began as a small space with big dreams 
                   of creating an inclusive, welcoming environment for yoga practitioners of all levels.
                 </p>
                 <p>
-                  The word "Yogodaan" combines "Yoga" with "Daan" (meaning gift or donation in Sanskrit), 
+                  The word "Yogodyaan" combines "Yoga" with "Daan" (meaning gift or donation in Sanskrit), 
                   reflecting our mission to share the gift of yoga with our community. We believe that 
                   yoga is not just about physical postures, but a holistic practice that nurtures the 
                   mind, body, and spirit.

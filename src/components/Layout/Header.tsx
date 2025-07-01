@@ -57,6 +57,7 @@ export function Header() {
                 Book Your Class
               </Button>
             </Link>
+            </div>
             */}
             
             {user ? (

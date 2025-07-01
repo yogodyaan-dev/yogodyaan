@@ -59,6 +59,7 @@ export function Header() {
             </Link>
             </div>
             */}
+          <div>
             
             {user ? (
               <div className="flex items-center space-x-2">

@@ -49,15 +49,15 @@ export function Header() {
             ))}
           </nav>
 
- 
-        {/* CTA Button & User Menu */}
+          
+          {/* CTA Button & User Menu 
           <div className="hidden md:flex items-center space-x-4">
             <Link to="/book-class">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105">
                 Book Your Class
               </Button>
-            </Link>  
-
+            </Link>
+            */}
             
             {user ? (
               <div className="flex items-center space-x-2">

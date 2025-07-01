@@ -1,13 +1,17 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, User, LogOut } from 'lucide-react'
+import { Menu, X, User, LogOut, ChevronDown, ChevronUp, LayoutDashboard, UserCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAdmin } from '../../contexts/AdminContext'
 import { Button } from '../UI/Button'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const { user, signOut } = useAuth()
+  const { isAdmin } = useAdmin()
   const location = useLocation()
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -19,6 +23,29 @@ export function Header() {
   ]
 
   const isActive = (path: string) => location.pathname === path
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  const getUserDisplayName = () => {
+    return user?.user_metadata?.full_name || user?.email || 'User'
+  }
+
+  const handleSignOut = () => {
+    signOut()
+    setIsDropdownOpen(false)
+  }
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
@@ -49,34 +76,68 @@ export function Header() {
             ))}
           </nav>
 
-          
-          {/*  Note: GC - this block has been commented. Since Jsx  JSX does not support block comments in div. the div has been closed before the coment ends. Another div created before the next code block starts.
-          CTA Button & User Menu 
+          {/* CTA Button & User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             <Link to="/book-class">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105">
                 Book Your Class
               </Button>
             </Link>
-            </div>
-            */}
-          <div>
             
             {user ? (
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-2 text-gray-700">
-                  <User size={20} />
-                  <span className="text-sm">{user.name}</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => signOut()}
-                  className="flex items-center space-x-1"
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors p-2 rounded-lg hover:bg-gray-50"
                 >
-                  <LogOut size={16} />
-                  <span>Sign Out</span>
-                </Button>
+                  <User size={20} />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">
+                      {getUserDisplayName()}
+                      {isAdmin && <span className="text-blue-600 ml-1">(Admin)</span>}
+                    </span>
+                  </div>
+                  {isDropdownOpen ? (
+                    <ChevronUp size={16} className="text-gray-400" />
+                  ) : (
+                    <ChevronDown size={16} className="text-gray-400" />
+                  )}
+                </button>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <UserCircle size={16} className="mr-2" />
+                      Profile
+                    </Link>
+                    
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <LayoutDashboard size={16} className="mr-2" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    
+                    <hr className="my-1" />
+                    
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      <LogOut size={16} className="mr-2" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link to="/login">
@@ -117,16 +178,43 @@ export function Header() {
                   <Button className="w-full mb-4 bg-blue-600 hover:bg-blue-700">Book Your Class</Button>
                 </Link>
                 {user ? (
-                  <div>
-                    <div className="flex items-center space-x-2 text-gray-700 mb-2">
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-gray-700 mb-3">
                       <User size={20} />
-                      <span className="text-sm">{user.email}</span>
+                      <span className="text-sm font-medium">
+                        {getUserDisplayName()}
+                        {isAdmin && <span className="text-blue-600 ml-1">(Admin)</span>}
+                      </span>
                     </div>
+                    
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors py-2"
+                    >
+                      <UserCircle size={16} />
+                      <span>Profile</span>
+                    </Link>
+                    
+                    {isAdmin && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors py-2"
+                      >
+                        <LayoutDashboard size={16} />
+                        <span>Admin Dashboard</span>
+                      </Link>
+                    )}
+                    
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => signOut()}
-                      className="flex items-center space-x-1"
+                      onClick={() => {
+                        signOut()
+                        setIsMenuOpen(false)
+                      }}
+                      className="flex items-center space-x-1 w-full justify-center"
                     >
                       <LogOut size={16} />
                       <span>Sign Out</span>

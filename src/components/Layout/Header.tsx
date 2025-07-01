@@ -49,6 +49,7 @@ export function Header() {
             ))}
           </nav>
 
+/* GC - Start - Remove Header Button         
           {/* CTA Button & User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             <Link to="/book-class">
@@ -56,7 +57,7 @@ export function Header() {
                 Book Your Class
               </Button>
             </Link>
-            
+End - Start - Remove Header Button     */          
             {user ? (
               <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-2 text-gray-700">

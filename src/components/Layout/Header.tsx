@@ -57,7 +57,7 @@ export function Header() {
                 Book Your Class
               </Button>
             </Link>
-          End - Start - Remove Header Button */}    
+          End - Remove Header Button */}    
             {user ? (
               <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-2 text-gray-700">

@@ -66,7 +66,7 @@ export function Header() {
               <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-2 text-gray-700">
                   <User size={20} />
-                  <span className="text-sm">{user.email}</span>
+                  <span className="text-sm">{user.name}</span>
                 </div>
                 <Button
                   variant="outline"

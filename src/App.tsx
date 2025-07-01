@@ -14,6 +14,7 @@ import { Contact } from './pages/Contact'
 import { Learning } from './pages/Learning'
 import { ArticleView } from './pages/ArticleView'
 import { Login } from './pages/Login'
+import { Profile } from './pages/Profile'
 import { AdminLogin } from './pages/AdminLogin'
 import { AdminDashboard } from './pages/AdminDashboard'
 import { NotFound } from './pages/NotFound'
@@ -51,6 +52,7 @@ function App() {
                       <Route path="/learning" element={<Learning />} />
                       <Route path="/learning/:id" element={<ArticleView />} />
                       <Route path="/login" element={<Login />} />
+                      <Route path="/profile" element={<Profile />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </main>

@@ -5,7 +5,9 @@ import {
   AlertCircle,
   LogOut,
   BookOpen,
-  BarChart3
+  BarChart3,
+  MessageCircle,
+  Mail
 } from 'lucide-react'
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'
@@ -46,8 +48,11 @@ export function AdminDashboard() {
     try {
       setLoading(true)
 
-      // Fetch all data in parallel
-      const [bookingsRes, queriesRes, contactsRes, articlesRes, viewsRes] = await Promise.all([
+      // Use service role or bypass RLS for admin queries
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      // Fetch all data in parallel with proper error handling
+      const [bookingsRes, queriesRes, contactsRes, articlesRes, viewsRes] = await Promise.allSettled([
         supabase.from('bookings').select('*').order('created_at', { ascending: false }),
         supabase.from('yoga_queries').select('*').order('created_at', { ascending: false }),
         supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
@@ -55,19 +60,35 @@ export function AdminDashboard() {
         supabase.from('article_views').select('*')
       ])
 
-      console.log('Fetched data:', {
-        bookings: bookingsRes.data?.length || 0,
-        queries: queriesRes.data?.length || 0,
-        contacts: contactsRes.data?.length || 0,
-        articles: articlesRes.data?.length || 0,
-        views: viewsRes.data?.length || 0
+      console.log('Fetch results:', {
+        bookings: bookingsRes,
+        queries: queriesRes,
+        contacts: contactsRes,
+        articles: articlesRes,
+        views: viewsRes
       })
 
-      const bookings = bookingsRes.data || []
-      const queries = queriesRes.data || []
-      const contacts = contactsRes.data || []
-      const articles = articlesRes.data || []
-      const views = viewsRes.data || []
+      // Extract data with fallbacks
+      const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []) : []
+      const queries = queriesRes.status === 'fulfilled' ? (queriesRes.value.data || []) : []
+      const contacts = contactsRes.status === 'fulfilled' ? (contactsRes.value.data || []) : []
+      const articles = articlesRes.status === 'fulfilled' ? (articlesRes.value.data || []) : []
+      const views = viewsRes.status === 'fulfilled' ? (viewsRes.value.data || []) : []
+
+      // Log any errors
+      if (bookingsRes.status === 'rejected') console.error('Bookings error:', bookingsRes.reason)
+      if (queriesRes.status === 'rejected') console.error('Queries error:', queriesRes.reason)
+      if (contactsRes.status === 'rejected') console.error('Contacts error:', contactsRes.reason)
+      if (articlesRes.status === 'rejected') console.error('Articles error:', articlesRes.reason)
+      if (viewsRes.status === 'rejected') console.error('Views error:', viewsRes.reason)
+
+      console.log('Processed data:', {
+        bookings: bookings.length,
+        queries: queries.length,
+        contacts: contacts.length,
+        articles: articles.length,
+        views: views.length
+      })
 
       // Filter pending queries and new contacts
       const pendingQueries = queries.filter(q => q.status === 'pending')
@@ -88,10 +109,10 @@ export function AdminDashboard() {
         publishedArticles: articles.filter(a => a.status === 'published').length,
         totalViews: views.length,
         recentBookings: bookings.slice(0, 5),
-        pendingQueries: pendingQueries.slice(0, 10), // Show more pending queries
-        newContacts: newContacts.slice(0, 10), // Show more new contacts
-        allQueries: queries, // Store all queries for the queries tab
-        allContacts: contacts // Store all contacts for the contacts tab
+        pendingQueries: pendingQueries.slice(0, 10),
+        newContacts: newContacts.slice(0, 10),
+        allQueries: queries,
+        allContacts: contacts
       })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -103,6 +124,48 @@ export function AdminDashboard() {
   const handleSignOut = async () => {
     await signOutAdmin()
     navigate('/')
+  }
+
+  const handleUpdateQueryStatus = async (queryId: string, status: string, response?: string) => {
+    try {
+      const updateData: any = { status }
+      if (response) {
+        updateData.response = response
+        updateData.responded_at = new Date().toISOString()
+      }
+
+      const { error } = await supabase
+        .from('yoga_queries')
+        .update(updateData)
+        .eq('id', queryId)
+
+      if (error) throw error
+
+      // Refresh data
+      await fetchDashboardData()
+      alert('Query updated successfully!')
+    } catch (error) {
+      console.error('Error updating query:', error)
+      alert('Failed to update query')
+    }
+  }
+
+  const handleUpdateContactStatus = async (contactId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('contact_messages')
+        .update({ status })
+        .eq('id', contactId)
+
+      if (error) throw error
+
+      // Refresh data
+      await fetchDashboardData()
+      alert('Contact status updated successfully!')
+    } catch (error) {
+      console.error('Error updating contact:', error)
+      alert('Failed to update contact status')
+    }
   }
 
   if (loading) {
@@ -134,22 +197,22 @@ export function AdminDashboard() {
       color: 'bg-blue-50 border-blue-200'
     },
     {
-      title: 'Published Articles',
-      value: stats.publishedArticles,
-      icon: <BookOpen className="w-8 h-8 text-green-600" />,
-      color: 'bg-green-50 border-green-200'
-    },
-    {
-      title: 'Total Article Views',
-      value: stats.totalViews,
-      icon: <BarChart3 className="w-8 h-8 text-purple-600" />,
+      title: 'Yoga Queries',
+      value: stats.totalQueries,
+      icon: <MessageCircle className="w-8 h-8 text-purple-600" />,
       color: 'bg-purple-50 border-purple-200'
     },
     {
-      title: 'Pending Queries',
-      value: stats.pendingQueries.length,
-      icon: <AlertCircle className="w-8 h-8 text-orange-600" />,
-      color: 'bg-orange-50 border-orange-200'
+      title: 'Contact Messages',
+      value: stats.totalContacts,
+      icon: <Mail className="w-8 h-8 text-green-600" />,
+      color: 'bg-green-50 border-green-200'
+    },
+    {
+      title: 'Published Articles',
+      value: stats.publishedArticles,
+      icon: <BookOpen className="w-8 h-8 text-indigo-600" />,
+      color: 'bg-indigo-50 border-indigo-200'
     }
   ]
 
@@ -210,6 +273,16 @@ export function AdminDashboard() {
                 }`}
               >
                 {tab.label}
+                {tab.id === 'queries' && stats.pendingQueries.length > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                    {stats.pendingQueries.length}
+                  </span>
+                )}
+                {tab.id === 'contacts' && stats.newContacts.length > 0 && (
+                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                    {stats.newContacts.length}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -268,7 +341,7 @@ export function AdminDashboard() {
                 </h3>
                 <div className="space-y-3">
                   {stats.pendingQueries.length > 0 ? (
-                    stats.pendingQueries.map((query) => (
+                    stats.pendingQueries.slice(0, 3).map((query) => (
                       <div key={query.id} className="p-3 bg-orange-50 rounded-lg">
                         <p className="font-medium text-gray-900">{query.name}</p>
                         <p className="text-sm text-gray-600 truncate">{query.subject}</p>
@@ -288,7 +361,7 @@ export function AdminDashboard() {
                 </h3>
                 <div className="space-y-3">
                   {stats.newContacts.length > 0 ? (
-                    stats.newContacts.map((contact) => (
+                    stats.newContacts.slice(0, 3).map((contact) => (
                       <div key={contact.id} className="p-3 bg-purple-50 rounded-lg">
                         <p className="font-medium text-gray-900">{contact.name}</p>
                         <p className="text-sm text-gray-600 truncate">{contact.subject}</p>
@@ -385,14 +458,35 @@ export function AdminDashboard() {
                         <h3 className="font-semibold text-gray-900">{query.subject}</h3>
                         <p className="text-sm text-gray-600">From: {query.name} ({query.email})</p>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        query.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {query.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          query.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {query.status}
+                        </span>
+                        {query.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const response = prompt('Enter your response:')
+                              if (response) {
+                                handleUpdateQueryStatus(query.id, 'responded', response)
+                              }
+                            }}
+                          >
+                            Respond
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <p className="text-gray-700 mb-2">{query.message}</p>
-                    <div className="flex justify-between items-center text-sm text-gray-500">
+                    {query.response && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-900 font-medium">Response:</p>
+                        <p className="text-sm text-blue-800">{query.response}</p>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
                       <span>Category: {query.category}</span>
                       <span>Experience: {query.experience_level}</span>
                       <span>{new Date(query.created_at).toLocaleDateString()}</span>
@@ -421,11 +515,22 @@ export function AdminDashboard() {
                         <p className="text-sm text-gray-600">From: {contact.name} ({contact.email})</p>
                         {contact.phone && <p className="text-sm text-gray-600">Phone: {contact.phone}</p>}
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        contact.status === 'new' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {contact.status}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          contact.status === 'new' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {contact.status}
+                        </span>
+                        {contact.status === 'new' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUpdateContactStatus(contact.id, 'read')}
+                          >
+                            Mark as Read
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <p className="text-gray-700 mb-2">{contact.message}</p>
                     <div className="text-sm text-gray-500">

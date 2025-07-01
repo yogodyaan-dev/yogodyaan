@@ -50,7 +50,8 @@ export function Header() {
           </nav>
 
           
-          {/* CTA Button & User Menu 
+          {/*  Note: GC - this block has been commented. Since Jsx  JSX does not support block comments in div. the div has been closed before the coment ends. Another div created before the next code block starts.
+          CTA Button & User Menu 
           <div className="hidden md:flex items-center space-x-4">
             <Link to="/book-class">
               <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105">

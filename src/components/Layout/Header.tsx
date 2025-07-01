@@ -39,7 +39,14 @@ export function Header() {
   }, [])
 
   const getUserDisplayName = () => {
-    return user?.user_metadata?.full_name || user?.email || 'User'
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name
+    }
+    // If no full name, extract name from email (before @)
+    if (user?.email) {
+      return user.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    }
+    return 'User'
   }
 
   const handleSignOut = () => {
@@ -76,14 +83,8 @@ export function Header() {
             ))}
           </nav>
 
-          {/* CTA Button & User Menu */}
+          {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/book-class">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105">
-                Book Your Class
-              </Button>
-            </Link>
-            
             {user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -174,9 +175,6 @@ export function Header() {
                 </Link>
               ))}
               <div className="pt-4 border-t">
-                <Link to="/book-class" onClick={() => setIsMenuOpen(false)}>
-                  <Button className="w-full mb-4 bg-blue-600 hover:bg-blue-700">Book Your Class</Button>
-                </Link>
                 {user ? (
                   <div className="space-y-3">
                     <div className="flex items-center space-x-2 text-gray-700 mb-3">

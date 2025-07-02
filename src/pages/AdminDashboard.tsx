@@ -21,13 +21,11 @@ interface DashboardStats {
   totalArticles: number
   publishedArticles: number
   totalViews: number
-  totalUsers: number
   recentBookings: any[]
   pendingQueries: any[]
   newContacts: any[]
   allQueries: any[]
   allContacts: any[]
-  allUsers: any[]
 }
 
 export function AdminDashboard() {
@@ -51,8 +49,8 @@ export function AdminDashboard() {
 
       console.log('Fetching dashboard data for admin:', admin?.email)
 
-      // Fetch all data with better error handling
-      const [bookingsRes, queriesRes, contactsRes, articlesRes, viewsRes, usersRes] = await Promise.allSettled([
+      // Fetch all data with better error handling (removed admin.listUsers)
+      const [bookingsRes, queriesRes, contactsRes, articlesRes, viewsRes] = await Promise.allSettled([
         supabase
           .from('bookings')
           .select('*')
@@ -71,8 +69,7 @@ export function AdminDashboard() {
           .order('created_at', { ascending: false }),
         supabase
           .from('article_views')
-          .select('*'),
-        supabase.auth.admin.listUsers()
+          .select('*')
       ])
 
       console.log('Fetch results:', {
@@ -80,8 +77,7 @@ export function AdminDashboard() {
         queries: queriesRes,
         contacts: contactsRes,
         articles: articlesRes,
-        views: viewsRes,
-        users: usersRes
+        views: viewsRes
       })
 
       // Extract data with fallbacks and detailed error logging
@@ -90,7 +86,6 @@ export function AdminDashboard() {
       let contacts: any[] = []
       let articles: any[] = []
       let views: any[] = []
-      let users: any[] = []
 
       if (bookingsRes.status === 'fulfilled') {
         if (bookingsRes.value.error) {
@@ -142,23 +137,12 @@ export function AdminDashboard() {
         console.error('Views fetch failed:', viewsRes.reason)
       }
 
-      if (usersRes.status === 'fulfilled') {
-        if (usersRes.value.error) {
-          console.error('Users error:', usersRes.value.error)
-        } else {
-          users = usersRes.value.data?.users || []
-        }
-      } else {
-        console.error('Users fetch failed:', usersRes.reason)
-      }
-
       console.log('Processed data:', {
         bookings: bookings.length,
         queries: queries.length,
         contacts: contacts.length,
         articles: articles.length,
-        views: views.length,
-        users: users.length
+        views: views.length
       })
 
       // Filter pending queries and new contacts
@@ -179,13 +163,11 @@ export function AdminDashboard() {
         totalArticles: articles.length,
         publishedArticles: articles.filter(a => a.status === 'published').length,
         totalViews: views.length,
-        totalUsers: users.length,
         recentBookings: bookings.slice(0, 5),
         pendingQueries: pendingQueries.slice(0, 10),
         newContacts: newContacts.slice(0, 10),
         allQueries: queries,
-        allContacts: contacts,
-        allUsers: users
+        allContacts: contacts
       })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -197,13 +179,11 @@ export function AdminDashboard() {
         totalArticles: 0,
         publishedArticles: 0,
         totalViews: 0,
-        totalUsers: 0,
         recentBookings: [],
         pendingQueries: [],
         newContacts: [],
         allQueries: [],
-        allContacts: [],
-        allUsers: []
+        allContacts: []
       })
     } finally {
       setLoading(false)
@@ -280,12 +260,6 @@ export function AdminDashboard() {
 
   const statCards = [
     {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: <UsersIcon className="w-8 h-8 text-indigo-600" />,
-      color: 'bg-indigo-50 border-indigo-200'
-    },
-    {
       title: 'Total Bookings',
       value: stats.totalBookings,
       icon: <Calendar className="w-8 h-8 text-blue-600" />,
@@ -353,7 +327,6 @@ export function AdminDashboard() {
           <nav className="flex space-x-8">
             {[
               { id: 'overview', label: 'Overview' },
-              { id: 'users', label: 'Users' },
               { id: 'articles', label: 'Articles' },
               { id: 'bookings', label: 'Bookings' },
               { id: 'queries', label: 'Yoga Queries' },
@@ -390,7 +363,7 @@ export function AdminDashboard() {
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {statCards.map((stat, index) => (
                 <div key={index} className={`card p-6 border-2 ${stat.color}`}>
                   <div className="flex items-center justify-between">
@@ -470,85 +443,6 @@ export function AdminDashboard() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'users' && (
-          <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Registered Users</h2>
-            {stats.allUsers.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email Confirmed
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Sign In
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Provider
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.allUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mr-4">
-                              <span className="text-white font-medium text-sm">
-                                {user.email?.charAt(0).toUpperCase() || 'U'}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {user.user_metadata?.full_name || 'No name provided'}
-                              </div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            user.email_confirmed_at 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.email_confirmed_at ? 'Confirmed' : 'Unconfirmed'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {user.last_sign_in_at 
-                            ? new Date(user.last_sign_in_at).toLocaleDateString()
-                            : 'Never'
-                          }
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {user.app_metadata?.provider || 'email'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <UsersIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No users yet</h3>
-                <p className="text-gray-600">Users will appear here once they register for accounts.</p>
-              </div>
-            )}
           </div>
         )}
 

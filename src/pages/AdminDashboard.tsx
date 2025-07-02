@@ -6,7 +6,11 @@ import {
   BookOpen,
   MessageCircle,
   Mail,
-  Users as UsersIcon
+  Users as UsersIcon,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Clock
 } from 'lucide-react'
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'
@@ -24,6 +28,7 @@ interface DashboardStats {
   recentBookings: any[]
   pendingQueries: any[]
   newContacts: any[]
+  allBookings: any[]
   allQueries: any[]
   allContacts: any[]
 }
@@ -49,7 +54,7 @@ export function AdminDashboard() {
 
       console.log('Fetching dashboard data for admin:', admin?.email)
 
-      // Fetch all data with better error handling (removed admin.listUsers)
+      // Fetch all data with better error handling
       const [bookingsRes, queriesRes, contactsRes, articlesRes, viewsRes] = await Promise.allSettled([
         supabase
           .from('bookings')
@@ -166,6 +171,7 @@ export function AdminDashboard() {
         recentBookings: bookings.slice(0, 5),
         pendingQueries: pendingQueries.slice(0, 10),
         newContacts: newContacts.slice(0, 10),
+        allBookings: bookings,
         allQueries: queries,
         allContacts: contacts
       })
@@ -182,6 +188,7 @@ export function AdminDashboard() {
         recentBookings: [],
         pendingQueries: [],
         newContacts: [],
+        allBookings: [],
         allQueries: [],
         allContacts: []
       })
@@ -234,6 +241,44 @@ export function AdminDashboard() {
     } catch (error) {
       console.error('Error updating contact:', error)
       alert('Failed to update contact status')
+    }
+  }
+
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to delete this booking?')) return
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+
+      if (error) throw error
+
+      // Refresh data
+      await fetchDashboardData()
+      alert('Booking deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting booking:', error)
+      alert('Failed to delete booking')
+    }
+  }
+
+  const handleUpdateBookingStatus = async (bookingId: string, status: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status })
+        .eq('id', bookingId)
+
+      if (error) throw error
+
+      // Refresh data
+      await fetchDashboardData()
+      alert('Booking status updated successfully!')
+    } catch (error) {
+      console.error('Error updating booking:', error)
+      alert('Failed to update booking status')
     }
   }
 
@@ -450,8 +495,8 @@ export function AdminDashboard() {
 
         {activeTab === 'bookings' && (
           <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Class Bookings</h2>
-            {stats.recentBookings.length > 0 ? (
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Class Bookings ({stats.allBookings.length})</h2>
+            {stats.allBookings.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -466,45 +511,78 @@ export function AdminDashboard() {
                         Instructor
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time
+                        Date & Time
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date Booked
+                        Actions
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.recentBookings.map((booking) => (
-                      <tr key={booking.id}>
+                    {stats.allBookings.map((booking) => (
+                      <tr key={booking.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
                               {booking.first_name} {booking.last_name}
                             </div>
                             <div className="text-sm text-gray-500">{booking.email}</div>
+                            <div className="text-sm text-gray-500">{booking.phone}</div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.class_name}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{booking.class_name}</div>
+                          <div className="text-sm text-gray-500">Level: {booking.experience_level}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {booking.instructor}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.class_time}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {new Date(booking.class_date).toLocaleDateString()}
+                          </div>
+                          <div className="text-sm text-gray-500">{booking.class_time}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
                           }`}>
                             {booking.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(booking.created_at).toLocaleDateString()}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            {booking.status !== 'cancelled' && (
+                              <button
+                                onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}
+                                className="text-red-600 hover:text-red-900"
+                                title="Cancel booking"
+                              >
+                                <Clock className="w-4 h-4" />
+                              </button>
+                            )}
+                            {booking.status === 'cancelled' && (
+                              <button
+                                onClick={() => handleUpdateBookingStatus(booking.id, 'confirmed')}
+                                className="text-green-600 hover:text-green-900"
+                                title="Confirm booking"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteBooking(booking.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Delete booking"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -609,6 +687,15 @@ export function AdminDashboard() {
                             onClick={() => handleUpdateContactStatus(contact.id, 'read')}
                           >
                             Mark as Read
+                          </Button>
+                        )}
+                        {contact.status === 'read' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleUpdateContactStatus(contact.id, 'responded')}
+                          >
+                            Mark as Responded
                           </Button>
                         )}
                       </div>

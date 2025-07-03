@@ -20,6 +20,8 @@ import { ArticleManagement } from '../components/Admin/ArticleManagement'
 import { BusinessSettings } from '../components/Admin/BusinessSettings'
 import { FormSubmissions } from '../components/Admin/FormSubmissions'
 import { NewsletterManagement } from '../components/Admin/NewsletterManagement'
+import { BookingManagement } from '../components/Admin/BookingManagement'
+import { UserRoleManagement } from '../components/Admin/UserRoleManagement'
 import { DashboardMetrics } from '../components/Analytics/DashboardMetrics'
 import { UserEngagementChart } from '../components/Analytics/UserEngagementChart'
 import { useAdmin } from '../contexts/AdminContext'
@@ -56,6 +58,7 @@ export function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [showRoleManagement, setShowRoleManagement] = useState(false)
 
   useEffect(() => {
     if (!isAdmin) {
@@ -177,6 +180,16 @@ export function AdminDashboard() {
   const handleSignOut = async () => {
     await signOutAdmin()
     navigate('/')
+  }
+
+  // Update user roles in the UI
+  const handleUpdateUserRoles = (newRoles: string[]) => {
+    if (selectedUser) {
+      setSelectedUser({
+        ...selectedUser,
+        user_roles: newRoles
+      })
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -374,6 +387,7 @@ export function AdminDashboard() {
                           <button 
                             onClick={() => setSelectedUser(user)}
                             className="text-blue-600 hover:text-blue-900"
+                            aria-label="View user details"
                           >
                             View Details
                           </button>
@@ -465,6 +479,19 @@ export function AdminDashboard() {
                       </div>
                     </div>
 
+                    {/* Manage Roles Button */}
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <Button
+                        onClick={() => setShowRoleManagement(true)}
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center"
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Manage User Roles
+                      </Button>
+                    </div>
+
                     <div className="pt-4 flex justify-end">
                       <Button
                         onClick={() => setSelectedUser(null)}
@@ -478,11 +505,29 @@ export function AdminDashboard() {
                 </div>
               </div>
             )}
+
+            {/* User Role Management Modal */}
+            {selectedUser && showRoleManagement && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <UserRoleManagement
+                    userId={selectedUser.user_id}
+                    userEmail={selectedUser.email}
+                    currentRoles={selectedUser.user_roles || []}
+                    onRoleUpdate={handleUpdateUserRoles}
+                    onClose={() => setShowRoleManagement(false)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Articles Tab */}
         {activeTab === 'articles' && <ArticleManagement />}
+
+        {/* Bookings Tab */}
+        {activeTab === 'bookings' && <BookingManagement />}
 
         {/* Form Submissions Tab */}
         {activeTab === 'submissions' && <FormSubmissions />}

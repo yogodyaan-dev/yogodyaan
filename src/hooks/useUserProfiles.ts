@@ -29,8 +29,6 @@ export function useUserProfiles() {
       setError(null)
 
       let { data, error: fetchError } = await supabase
-        .rpc('get_user_profiles_for_admin')
-
       if (fetchError) {
         console.error('RPC Error:', fetchError)
         throw fetchError
@@ -39,7 +37,7 @@ export function useUserProfiles() {
       setProfiles(data || [])
     } catch (err: any) {
       console.error('Error fetching user profiles:', err)
-      setError(err.message)
+      setError(err.message || 'Failed to load user profiles')
       
       // Fallback: try to fetch profiles directly if RPC fails
       try {
@@ -62,11 +60,12 @@ export function useUserProfiles() {
         const transformedData = (fallbackData || []).map(profile => ({
           ...profile,
           user_id: profile.id, // If profiles don't have user_id field in the fallback
-          experience_level: profile.role || 'user',
-          user_created_at: profile.created_at,
-          total_bookings: 0,
-          attended_classes: 0,
-          articles_viewed: 0
+          experience_level: profile.role || 'user', 
+          user_created_at: profile.created_at, 
+          total_bookings: 0, 
+          attended_classes: 0, 
+          articles_viewed: 0, 
+          user_roles: ['user'] // Default role
         }))
 
         setProfiles(transformedData)

@@ -151,6 +151,7 @@ export function Header() {
                     >
                       <LogOut size={16} className="mr-2" />
                       Sign Out
+                    </button>
                   </div>
                 )}
               </div>

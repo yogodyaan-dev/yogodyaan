@@ -28,7 +28,9 @@ export function useUserProfiles() {
       setLoading(true)
       setError(null)
 
-      let { data, error: fetchError } = await supabase
+      const { data, error: fetchError } = await supabase
+        .rpc('get_user_profiles_for_admin')
+
       if (fetchError) {
         console.error('RPC Error:', fetchError)
         throw fetchError
@@ -43,22 +45,14 @@ export function useUserProfiles() {
       try {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('profiles')
-          .select(`
-            id,
-            full_name,
-            phone,
-            bio,
-            role,
-            created_at,
-            updated_at,
-            email
-          `)
+          .select(`*`)
           .order('created_at', { ascending: false })
 
         if (fallbackError) throw fallbackError
 
         const transformedData = (fallbackData || []).map(profile => ({
           ...profile,
+          user_id: profile.user_id || profile.id, // Ensure user_id is set
           user_id: profile.id, // If profiles don't have user_id field in the fallback
           experience_level: profile.role || 'user', 
           user_created_at: profile.created_at, 

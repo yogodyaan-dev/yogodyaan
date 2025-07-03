@@ -178,42 +178,6 @@ export function AdminDashboard() {
     navigate('/')
   }
 
-  const handleDeleteBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to delete this booking?')) return
-
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('id', bookingId)
-
-      if (error) throw error
-
-      await fetchDashboardData()
-      alert('Booking deleted successfully!')
-    } catch (error) {
-      console.error('Error deleting booking:', error)
-      alert('Failed to delete booking')
-    }
-  }
-
-  const handleUpdateBookingStatus = async (bookingId: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status })
-        .eq('id', bookingId)
-
-      if (error) throw error
-
-      await fetchDashboardData()
-      alert('Booking status updated successfully!')
-    } catch (error) {
-      console.error('Error updating booking:', error)
-      alert('Failed to update booking status')
-    }
-  }
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',

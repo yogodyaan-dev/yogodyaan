@@ -36,7 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
       if (error) throw error
         
-      const roles = data?.flatMap(item => item.roles?.map(role => role.name) || []) || []
       const roles = data?.map(item => item.roles?.name).filter(Boolean) || []
       setUserRoles(roles)
       setIsMantraCurator(roles.includes('mantra_curator'))

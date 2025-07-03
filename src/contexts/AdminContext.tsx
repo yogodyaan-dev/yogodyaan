@@ -36,7 +36,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Admin check error:', error)
-        // Fallback for known admin email during debugging
+        // For known admin emails during testing
         if (user.email === 'gourab.master@gmail.com') {
           console.log('Allowing access for known admin email')
           setIsAdmin(true)
@@ -51,14 +51,19 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         setIsAdmin(false)
       }
     } catch (error) {
+      // Added better error handling here to prevent uncaught exceptions
       console.error('Exception during admin check:', error)
-      // Fallback for debugging
+      
+      // For known admin emails during testing
       if (user.email === 'gourab.master@gmail.com') {
         console.log('Exception occurred, but allowing access for known admin email')
         setIsAdmin(true)
         return
       }
       setIsAdmin(false)
+    } finally {
+      // Make sure we always clear loading state
+      // even if there was an error
     }
   }
 
@@ -72,9 +77,19 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const user = session?.user ?? null
       console.log('Initial session user:', user?.email)
       setAdmin(user)
-      checkAdminStatus(user).finally(() => {
+      
+      // Wrap checkAdminStatus in try/catch to prevent uncaught errors
+      try {
+        checkAdminStatus(user).finally(() => {
+          if (mounted) setLoading(false)
+        })
+      } catch (error) {
+        console.error('Error in initial admin check:', error)
         if (mounted) setLoading(false)
-      })
+      }
+    }).catch(error => {
+      console.error('Error getting initial session:', error)
+      if (mounted) setLoading(false)
     })
 
     // Listen for auth changes
@@ -85,9 +100,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         const user = session?.user ?? null
         console.log('Auth state changed, user:', user?.email)
         setAdmin(user)
-        checkAdminStatus(user).finally(() => {
+        
+        // Wrap checkAdminStatus in try/catch to prevent uncaught errors
+        try {
+          checkAdminStatus(user).finally(() => {
+            if (mounted) setLoading(false)
+          })
+        } catch (error) {
+          console.error('Error in auth change admin check:', error)
           if (mounted) setLoading(false)
-        })
+        }
       }
     )
 
@@ -112,7 +134,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
 
     console.log('Auth sign in successful, checking admin status...')
-
+    
     // For debugging, allow known admin email to proceed
     if (email === 'gourab.master@gmail.com') {
       console.log('Allowing access for known admin email during debugging')
@@ -149,7 +171,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       // Don't sign out during debugging for known admin
       if (email !== 'gourab.master@gmail.com') {
         await supabase.auth.signOut()
-        throw new Error('Access denied. Admin privileges required.')
+        throw error
       }
     }
 

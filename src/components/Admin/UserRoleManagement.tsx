@@ -105,7 +105,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       
       if (fetchError) throw fetchError
 
-      const existingRoles = existingRoleData?.map(item => item.roles?.name) || []
       const existingRoles = existingRoleData?.filter(item => item.roles).map(item => item.roles!.name) || []
       
       // 2. Get IDs for all selected roles

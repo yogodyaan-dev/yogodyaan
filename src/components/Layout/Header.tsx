@@ -9,7 +9,7 @@ import { Button } from '../UI/Button'
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { user, userRoles, isMantraCurator, signOut } = useAuth()
+  const { user, isMantraCurator, signOut } = useAuth()
   const { isAdmin } = useAdmin()
   const location = useLocation()
   const dropdownRef = useRef<HTMLDivElement>(null)

@@ -93,6 +93,10 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
     setUpdating(true)
     setError('')
     try {
+      // Get the current user ID at the beginning of the function
+      const currentUser = await supabase.auth.getUser()
+      const assignedById = currentUser.data.user?.id
+
       // 1. Get the current user roles from the database
       const { data: existingRoleData, error: fetchError } = await supabase
         .from('user_roles')
@@ -130,10 +134,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 4. Add newly selected roles
       const rolesToAdd = selectedRoles.filter(role => !existingRoles.includes(role))
       if (rolesToAdd.length > 0) {
-        // Get the current user ID before mapping
-        const currentUser = await supabase.auth.getUser()
-        const assignedById = currentUser.data.user?.id
-        
         const roleRecords = rolesToAdd.map(roleName => ({
           user_id: userId,
           role_id: roleData.find(r => r.name === roleName)!.id,

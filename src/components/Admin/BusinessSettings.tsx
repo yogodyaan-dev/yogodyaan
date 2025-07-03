@@ -4,12 +4,6 @@ import { Button } from '../UI/Button'
 import { LoadingSpinner } from '../UI/LoadingSpinner'
 import { supabase } from '../../lib/supabase'
 
-interface BusinessSetting {
-  key: string
-  value: any
-  description: string
-}
-
 export function BusinessSettings() {
   const [settings, setSettings] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
@@ -50,6 +44,7 @@ export function BusinessSettings() {
   }
 
   const handleNestedChange = (key: string, nestedKey: string, value: string) => {
+  const handleNestedChange = (key: string, nestedKey: string, value: any) => {
     setSettings(prev => ({
       ...prev,
       [key]: {

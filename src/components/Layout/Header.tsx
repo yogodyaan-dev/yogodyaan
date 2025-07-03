@@ -3,12 +3,13 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, User, LogOut, ChevronDown, ChevronUp, LayoutDashboard, UserCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAdmin } from '../../contexts/AdminContext'
+import { BookOpen } from 'lucide-react'
 import { Button } from '../UI/Button'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { user, signOut } = useAuth()
+  const { user, userRoles, isMantraCurator, signOut } = useAuth()
   const { isAdmin } = useAdmin()
   const location = useLocation()
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -97,6 +98,8 @@ export function Header() {
                     <span className="text-sm font-medium">
                       {getUserDisplayName()}
                       {isAdmin && <span className="text-blue-600 ml-1">(Admin)</span>}
+                      {isMantraCurator && <span className="text-emerald-600 ml-1">(Curator)</span>}
+                      {isMantraCurator && <span className="text-emerald-600 ml-1">(Curator)</span>}
                     </span>
                   </div>
                   {isDropdownOpen ? (
@@ -117,6 +120,17 @@ export function Header() {
                       <UserCircle size={16} className="mr-2" />
                       Profile
                     </Link>
+
+                    {isMantraCurator && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <BookOpen size={16} className="mr-2" />
+                        Manage Articles
+                      </Link>
+                    )}
                     
                     {isAdmin && (
                       <Link
@@ -138,6 +152,7 @@ export function Header() {
                       <LogOut size={16} className="mr-2" />
                       Sign Out
                     </button>
+                    </Link>
                   </div>
                 )}
               </div>
@@ -194,6 +209,17 @@ export function Header() {
                       <UserCircle size={16} />
                       <span>Profile</span>
                     </Link>
+
+                    {isMantraCurator && (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors py-2"
+                      >
+                        <BookOpen size={16} />
+                        <span>Manage Articles</span>
+                      </Link>
+                    )}
                     
                     {isAdmin && (
                       <Link

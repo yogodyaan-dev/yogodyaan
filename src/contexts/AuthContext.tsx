@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { Session } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: User | null
   loading: boolean
+  userRoles: string[]
+  isMantraCurator: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
@@ -14,7 +17,34 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [userRoles, setUserRoles] = useState<string[]>([])
+  const [isMantraCurator, setIsMantraCurator] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  const fetchUserRoles = async (session: Session | null) => {
+    if (!session?.user) {
+      setUserRoles([])
+      setIsMantraCurator(false)
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('roles(name)')
+        .eq('user_id', session.user.id)
+        
+      if (error) throw error
+        
+      const roles = data?.map(item => item.roles.name) || []
+      setUserRoles(roles)
+      setIsMantraCurator(roles.includes('mantra_curator'))
+    } catch (error) {
+      console.error('Error fetching user roles:', error)
+      setUserRoles(['user']) // Default fallback role
+      setIsMantraCurator(false)
+    }
+  }
 
   useEffect(() => {
     let mounted = true
@@ -23,7 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
       setUser(session?.user ?? null)
-      setLoading(false)
+      fetchUserRoles(session).finally(() => {
+        if (mounted) setLoading(false)
+      })
     })
 
     // Listen for auth changes
@@ -31,7 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (_event, session) => {
         if (!mounted) return
         setUser(session?.user ?? null)
-        setLoading(false)
+        fetchUserRoles(session).finally(() => {
+          if (mounted) setLoading(false)
+        })
       }
     )
 
@@ -65,6 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     loading,
+    userRoles,
+    isMantraCurator,
     signIn,
     signUp,
     signOut,

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdmin } from '../../contexts/AdminContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { LoadingSpinner } from '../UI/LoadingSpinner'
 
 interface ProtectedAdminRouteProps {
@@ -9,13 +10,14 @@ interface ProtectedAdminRouteProps {
 
 export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
   const { admin, isAdmin, loading } = useAdmin()
+  const { isMantraCurator } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (!loading && (!admin || !isAdmin)) {
+    if (!loading && (!admin || (!isAdmin && !isMantraCurator))) {
       navigate('/admin/login')
     }
-  }, [admin, isAdmin, loading, navigate])
+  }, [admin, isAdmin, isMantraCurator, loading, navigate])
 
   if (loading) {
     return (
@@ -25,7 +27,7 @@ export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
     )
   }
 
-  if (!admin || !isAdmin) {
+  if (!admin || (!isAdmin && !isMantraCurator)) {
     return null
   }
 

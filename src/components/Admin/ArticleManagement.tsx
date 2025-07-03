@@ -4,14 +4,20 @@ import { Button } from '../UI/Button'
 import { LoadingSpinner } from '../UI/LoadingSpinner'
 import { ArticleEditor } from './ArticleEditor'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../contexts/AuthContext'
 import { Article } from '../../types/article'
 
-export function ArticleManagement() {
+interface ArticleManagementProps {
+  authorId?: string; // Optional prop for filtering by author
+}
+
+export function ArticleManagement({ authorId }: ArticleManagementProps) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
   const [editingArticle, setEditingArticle] = useState<Article | null>(null)
   const [saving, setSaving] = useState(false)
+  const { user, isMantraCurator } = useAuth()
 
   useEffect(() => {
     fetchArticles()
@@ -20,10 +26,22 @@ export function ArticleManagement() {
   const fetchArticles = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false })
+      
+      // Build query based on whether we're filtering by author
+      let query = supabase.from('articles').select('*')
+      
+      // If authorId is provided or user is a mantra curator, filter by author
+      if (authorId) {
+        query = query.eq('author_id', authorId)
+      } else if (isMantraCurator && user) {
+        // Mantra curators can only see their own articles
+        query = query.eq('author_id', user.id)
+      }
+      
+      // Sort by created date
+      query = query.order('created_at', { ascending: false })
+      
+      const { data, error } = await query
 
       if (error) throw error
       setArticles(data || [])
@@ -40,17 +58,30 @@ export function ArticleManagement() {
       
       if (editingArticle) {
         // Update existing article
-        const { error } = await supabase
+        // Ensure we only update articles the user owns (for mantra curators)
+        let query = supabase
           .from('articles')
           .update(articleData)
           .eq('id', editingArticle.id)
         
+        // Add author check for mantra curators
+        if (isMantraCurator && user) {
+          query = query.eq('author_id', user.id)
+        }
+        
+        const { error } = await query
         if (error) throw error
       } else {
         // Create new article
+        // Set author_id if user is a mantra curator
+        const newArticleData = {
+          ...articleData,
+          author_id: user?.id || null
+        }
+        
         const { error } = await supabase
           .from('articles')
-          .insert([articleData])
+          .insert([newArticleData])
         
         if (error) throw error
       }
@@ -68,12 +99,20 @@ export function ArticleManagement() {
 
   const handleDeleteArticle = async (id: string) => {
     if (!confirm('Are you sure you want to delete this article?')) return
-
+    
     try {
-      const { error } = await supabase
+      // Start building the query
+      let query = supabase
         .from('articles')
         .delete()
         .eq('id', id)
+      
+      // Add author check for mantra curators
+      if (isMantraCurator && user) {
+        query = query.eq('author_id', user.id)
+      }
+      
+      const { error } = await query
 
       if (error) throw error
       await fetchArticles()
@@ -119,7 +158,7 @@ export function ArticleManagement() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Article Management</h2>
         <Button onClick={handleCreateNew} className="flex items-center">
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4 mr-2" /> 
           Create New Article
         </Button>
       </div>

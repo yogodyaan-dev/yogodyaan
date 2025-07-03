@@ -15,6 +15,7 @@ import {
   FileText,
   Shield
 } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'
 import { ArticleManagement } from '../components/Admin/ArticleManagement'
@@ -53,6 +54,7 @@ interface DashboardStats {
 
 export function AdminDashboard() {
   const { admin, isAdmin, signOutAdmin } = useAdmin()
+  const { isMantraCurator } = useAuth()
   const { profiles } = useUserProfiles()
   const navigate = useNavigate()
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -62,12 +64,12 @@ export function AdminDashboard() {
   const [showRoleManagement, setShowRoleManagement] = useState(false)
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdmin && !isMantraCurator) {
       navigate('/admin/login')
       return
     }
     fetchDashboardData()
-  }, [isAdmin, navigate])
+  }, [isAdmin, isMantraCurator, navigate])
 
   const fetchDashboardData = async () => {
     try {
@@ -262,19 +264,24 @@ export function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8 overflow-x-auto">
             {[
-              { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
-              { id: 'users', label: 'User Management', icon: <UsersIcon className="w-4 h-4" /> },
-              { id: 'instructors', label: 'Instructors', icon: <GraduationCap className="w-4 h-4" /> },
-              { id: 'classes', label: 'Class Types', icon: <Calendar className="w-4 h-4" /> },
-              { id: 'articles', label: 'Articles', icon: <BookOpen className="w-4 h-4" /> },
-              { id: 'bookings', label: 'Bookings', icon: <Calendar className="w-4 h-4" /> },
-              { id: 'subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-4 h-4" /> },
-              { id: 'transactions', label: 'Transactions', icon: <TrendingUp className="w-4 h-4" /> },
-              { id: 'queries', label: 'Yoga Queries', icon: <MessageCircle className="w-4 h-4" /> },
-              { id: 'contacts', label: 'Contact Messages', icon: <Mail className="w-4 h-4" /> },
-              { id: 'submissions', label: 'Form Submissions', icon: <FileText className="w-4 h-4" /> },
-              { id: 'newsletter', label: 'Newsletter', icon: <Mail className="w-4 h-4" /> },
-              { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> }
+              // Only show articles tab for Mantra Curators who are not admins
+              ...(isMantraCurator && !isAdmin ? [
+                { id: 'articles', label: 'Articles', icon: <BookOpen className="w-4 h-4" /> }
+              ] : [
+                { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+                { id: 'users', label: 'User Management', icon: <UsersIcon className="w-4 h-4" /> },
+                { id: 'instructors', label: 'Instructors', icon: <GraduationCap className="w-4 h-4" /> },
+                { id: 'classes', label: 'Class Types', icon: <Calendar className="w-4 h-4" /> },
+                { id: 'articles', label: 'Articles', icon: <BookOpen className="w-4 h-4" /> },
+                { id: 'bookings', label: 'Bookings', icon: <Calendar className="w-4 h-4" /> },
+                { id: 'subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-4 h-4" /> },
+                { id: 'transactions', label: 'Transactions', icon: <TrendingUp className="w-4 h-4" /> },
+                { id: 'queries', label: 'Yoga Queries', icon: <MessageCircle className="w-4 h-4" /> },
+                { id: 'contacts', label: 'Contact Messages', icon: <Mail className="w-4 h-4" /> },
+                { id: 'submissions', label: 'Form Submissions', icon: <FileText className="w-4 h-4" /> },
+                { id: 'newsletter', label: 'Newsletter', icon: <Mail className="w-4 h-4" /> },
+                { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> }
+              ])
             ].map((tab) => (
               <button
                 key={tab.id}

@@ -8,6 +8,7 @@ import { ProtectedAdminRoute } from './components/Admin/ProtectedAdminRoute'
 import { Home } from './pages/Home'
 import { About } from './pages/About'
 import { Services } from './pages/Services'
+import { Schedule } from './pages/Schedule'
 import { Testimonials } from './pages/Testimonials'
 import { BookClass } from './pages/BookClass'
 import { Contact } from './pages/Contact'
@@ -46,6 +47,7 @@ function App() {
                       <Route path="/" element={<Home />} />
                       <Route path="/about" element={<About />} />
                       <Route path="/services" element={<Services />} />
+                      <Route path="/schedule" element={<Schedule />} />
                       <Route path="/testimonials" element={<Testimonials />} />
                       <Route path="/book-class" element={<BookClass />} />
                       <Route path="/contact" element={<Contact />} />

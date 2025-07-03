@@ -7,8 +7,6 @@ import {
   MessageCircle,
   Mail,
   Users as UsersIcon,
-  Clock,
-  UserPlus,
   GraduationCap,
   CreditCard,
   BarChart3,

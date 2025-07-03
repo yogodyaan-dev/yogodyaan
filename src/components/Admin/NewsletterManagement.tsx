@@ -27,8 +27,6 @@ export function NewsletterManagement() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('newsletters')
-  const [showEditor, setShowEditor] = useState(false)
-  const [editingNewsletter, setEditingNewsletter] = useState<Newsletter | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -53,16 +51,6 @@ export function NewsletterManagement() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleCreateNewsletter = () => {
-    setEditingNewsletter(null)
-    setShowEditor(true)
-  }
-
-  const handleEditNewsletter = (newsletter: Newsletter) => {
-    setEditingNewsletter(newsletter)
-    setShowEditor(true)
   }
 
   const handleDeleteNewsletter = async (id: string) => {
@@ -184,10 +172,6 @@ export function NewsletterManagement() {
                   <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No newsletters yet</h3>
                   <p className="text-gray-600 mb-4">Create your first newsletter to get started.</p>
-                  <Button onClick={handleCreateNewsletter}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Newsletter
-                  </Button>
                 </div>
               ) : (
                 newsletters.map((newsletter) => (
@@ -212,7 +196,7 @@ export function NewsletterManagement() {
                       </div>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => handleEditNewsletter(newsletter)}
+                          onClick={() => console.log('Edit newsletter:', newsletter.id)}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           <Eye className="w-4 h-4" />

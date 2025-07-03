@@ -7,8 +7,6 @@ import {
   MessageCircle,
   Mail,
   Users as UsersIcon,
-  Trash2,
-  CheckCircle,
   Clock,
   UserPlus,
   GraduationCap,

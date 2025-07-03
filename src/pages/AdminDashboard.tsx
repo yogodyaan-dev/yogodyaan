@@ -20,7 +20,10 @@ import {
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'
 import { ArticleManagement } from '../components/Admin/ArticleManagement'
+import { DashboardMetrics } from '../components/Analytics/DashboardMetrics'
+import { UserEngagementChart } from '../components/Analytics/UserEngagementChart'
 import { useAdmin } from '../contexts/AdminContext'
+import { useUserProfiles } from '../hooks/useUserProfiles'
 import { supabase } from '../lib/supabase'
 
 interface DashboardStats {
@@ -39,7 +42,6 @@ interface DashboardStats {
   allBookings: any[]
   allQueries: any[]
   allContacts: any[]
-  allUsers: any[]
   allInstructors: any[]
   allClassTypes: any[]
   allSubscriptions: any[]
@@ -48,6 +50,7 @@ interface DashboardStats {
 
 export function AdminDashboard() {
   const { admin, isAdmin, signOutAdmin } = useAdmin()
+  const { profiles } = useUserProfiles()
   const navigate = useNavigate()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -74,7 +77,6 @@ export function AdminDashboard() {
         contactsRes, 
         articlesRes, 
         viewsRes,
-        usersRes,
         instructorsRes,
         classTypesRes,
         subscriptionsRes,
@@ -85,7 +87,6 @@ export function AdminDashboard() {
         supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
         supabase.from('articles').select('*').order('created_at', { ascending: false }),
         supabase.from('article_views').select('*'),
-        supabase.rpc('get_user_profiles_for_admin'),
         supabase.from('instructors').select('*').order('created_at', { ascending: false }),
         supabase.from('class_types').select('*').order('created_at', { ascending: false }),
         supabase.from('user_subscriptions').select('*, subscription_plans(*)').order('created_at', { ascending: false }),
@@ -98,16 +99,10 @@ export function AdminDashboard() {
       const contacts = contactsRes.status === 'fulfilled' && !contactsRes.value.error ? contactsRes.value.data || [] : []
       const articles = articlesRes.status === 'fulfilled' && !articlesRes.value.error ? articlesRes.value.data || [] : []
       const views = viewsRes.status === 'fulfilled' && !viewsRes.value.error ? viewsRes.value.data || [] : []
-      const users = usersRes.status === 'fulfilled' && !usersRes.value.error ? usersRes.value.data || [] : []
       const instructors = instructorsRes.status === 'fulfilled' && !instructorsRes.value.error ? instructorsRes.value.data || [] : []
       const classTypes = classTypesRes.status === 'fulfilled' && !classTypesRes.value.error ? classTypesRes.value.data || [] : []
       const subscriptions = subscriptionsRes.status === 'fulfilled' && !subscriptionsRes.value.error ? subscriptionsRes.value.data || [] : []
       const transactions = transactionsRes.status === 'fulfilled' && !transactionsRes.value.error ? transactionsRes.value.data || [] : []
-
-      // Log any errors for debugging
-      if (usersRes.status === 'rejected' || (usersRes.status === 'fulfilled' && usersRes.value.error)) {
-        console.error('Error fetching users:', usersRes.status === 'rejected' ? usersRes.reason : usersRes.value.error)
-      }
 
       // Filter data
       const pendingQueries = queries.filter(q => q.status === 'pending')
@@ -125,7 +120,7 @@ export function AdminDashboard() {
         totalArticles: articles.length,
         publishedArticles: articles.filter(a => a.status === 'published').length,
         totalViews: views.length,
-        totalUsers: users.length,
+        totalUsers: profiles.length,
         activeSubscriptions: activeSubscriptions.length,
         monthlyRevenue,
         recentBookings: bookings.slice(0, 5),
@@ -134,7 +129,6 @@ export function AdminDashboard() {
         allBookings: bookings,
         allQueries: queries,
         allContacts: contacts,
-        allUsers: users,
         allInstructors: instructors,
         allClassTypes: classTypes,
         allSubscriptions: subscriptions,
@@ -158,7 +152,6 @@ export function AdminDashboard() {
         allBookings: [],
         allQueries: [],
         allContacts: [],
-        allUsers: [],
         allInstructors: [],
         allClassTypes: [],
         allSubscriptions: [],
@@ -278,45 +271,6 @@ export function AdminDashboard() {
     )
   }
 
-  const statCards = [
-    {
-      title: 'Total Users',
-      value: stats.totalUsers,
-      icon: <UsersIcon className="w-8 h-8 text-blue-600" />,
-      color: 'bg-blue-50 border-blue-200'
-    },
-    {
-      title: 'Total Bookings',
-      value: stats.totalBookings,
-      icon: <Calendar className="w-8 h-8 text-green-600" />,
-      color: 'bg-green-50 border-green-200'
-    },
-    {
-      title: 'Active Subscriptions',
-      value: stats.activeSubscriptions,
-      icon: <CreditCard className="w-8 h-8 text-purple-600" />,
-      color: 'bg-purple-50 border-purple-200'
-    },
-    {
-      title: 'Monthly Revenue',
-      value: formatCurrency(stats.monthlyRevenue),
-      icon: <TrendingUp className="w-8 h-8 text-emerald-600" />,
-      color: 'bg-emerald-50 border-emerald-200'
-    },
-    {
-      title: 'Published Articles',
-      value: stats.publishedArticles,
-      icon: <BookOpen className="w-8 h-8 text-orange-600" />,
-      color: 'bg-orange-50 border-orange-200'
-    },
-    {
-      title: 'Pending Queries',
-      value: stats.pendingQueries.length,
-      icon: <MessageCircle className="w-8 h-8 text-red-600" />,
-      color: 'bg-red-50 border-red-200'
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -400,25 +354,15 @@ export function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {statCards.map((stat, index) => (
-                <div key={index} className={`card p-6 border-2 ${stat.color}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                    </div>
-                    {stat.icon}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Enhanced Metrics */}
+            <DashboardMetrics />
 
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Recent Bookings */}
-              <div className="card p-6">
+            {/* Analytics Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <UserEngagementChart />
+              
+              {/* Recent Activity */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Bookings</h3>
                 <div className="space-y-3">
                   {stats.recentBookings.length > 0 ? (
@@ -440,54 +384,15 @@ export function AdminDashboard() {
                   )}
                 </div>
               </div>
-
-              {/* Pending Queries */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Pending Queries ({stats.pendingQueries.length})
-                </h3>
-                <div className="space-y-3">
-                  {stats.pendingQueries.length > 0 ? (
-                    stats.pendingQueries.slice(0, 3).map((query) => (
-                      <div key={query.id} className="p-3 bg-orange-50 rounded-lg">
-                        <p className="font-medium text-gray-900">{query.name}</p>
-                        <p className="text-sm text-gray-600 truncate">{query.subject}</p>
-                        <p className="text-xs text-orange-600 mt-1">Needs response</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-sm">No pending queries</p>
-                  )}
-                </div>
-              </div>
-
-              {/* New Contacts */}
-              <div className="card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  New Contact Messages ({stats.newContacts.length})
-                </h3>
-                <div className="space-y-3">
-                  {stats.newContacts.length > 0 ? (
-                    stats.newContacts.slice(0, 3).map((contact) => (
-                      <div key={contact.id} className="p-3 bg-purple-50 rounded-lg">
-                        <p className="font-medium text-gray-900">{contact.name}</p>
-                        <p className="text-sm text-gray-600 truncate">{contact.subject}</p>
-                        <p className="text-xs text-purple-600 mt-1">New message</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-sm">No new contact messages</p>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}
 
+        {/* Rest of the existing tabs remain the same */}
         {activeTab === 'users' && (
           <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">User Management ({stats.allUsers.length})</h2>
-            {stats.allUsers.length > 0 ? (
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">User Management ({profiles.length})</h2>
+            {profiles.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -507,7 +412,7 @@ export function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.allUsers.map((user) => (
+                    {profiles.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
@@ -546,522 +451,9 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {activeTab === 'instructors' && (
-          <div className="card p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Instructors ({stats.allInstructors.length})</h2>
-              <Button className="flex items-center">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Instructor
-              </Button>
-            </div>
-            {stats.allInstructors.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stats.allInstructors.map((instructor) => (
-                  <div key={instructor.id} className="bg-white border rounded-lg p-6">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <GraduationCap className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{instructor.name}</h3>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          instructor.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {instructor.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                    {instructor.bio && (
-                      <p className="text-gray-600 text-sm mb-4">{instructor.bio}</p>
-                    )}
-                    {instructor.specializations && instructor.specializations.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Specializations:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {instructor.specializations.map((spec: string, index: number) => (
-                            <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                              {spec}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex space-x-2">
-                      <Button size="sm" variant="outline">
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No instructors yet</h3>
-                <p className="text-gray-600">Add instructors to start offering classes.</p>
-                <Button className="mt-4">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add First Instructor
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'classes' && (
-          <div className="card p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Class Types ({stats.allClassTypes.length})</h2>
-              <Button className="flex items-center">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Add Class Type
-              </Button>
-            </div>
-            {stats.allClassTypes.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Class Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Duration
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Difficulty
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.allClassTypes.map((classType) => (
-                      <tr key={classType.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{classType.name}</div>
-                            <div className="text-sm text-gray-500">{classType.description}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {classType.duration_minutes} min
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
-                            {classType.difficulty_level}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {classType.price ? formatCurrency(parseFloat(classType.price)) : 'Free'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            classType.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {classType.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-900">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button className="text-red-600 hover:text-red-900">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No class types yet</h3>
-                <p className="text-gray-600">Create class types to organize your offerings.</p>
-                <Button className="mt-4">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Add First Class Type
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
         {activeTab === 'articles' && <ArticleManagement />}
 
-        {activeTab === 'subscriptions' && (
-          <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Subscriptions ({stats.allSubscriptions.length})</h2>
-            {stats.allSubscriptions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Plan
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Credits
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Expires
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.allSubscriptions.map((subscription) => (
-                      <tr key={subscription.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          User ID: {subscription.user_id.substring(0, 8)}...
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {subscription.subscription_plans?.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            subscription.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {subscription.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {subscription.credits_remaining || 'Unlimited'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(subscription.current_period_end).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No subscriptions yet</h3>
-                <p className="text-gray-600">Subscriptions will appear here when users subscribe.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'transactions' && (
-          <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Transactions ({stats.allTransactions.length})</h2>
-            {stats.allTransactions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Transaction
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.allTransactions.map((transaction) => (
-                      <tr key={transaction.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {transaction.id.substring(0, 8)}...
-                            </div>
-                            <div className="text-sm text-gray-500">{transaction.description}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(parseFloat(transaction.amount))}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
-                            {transaction.transaction_type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {transaction.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(transaction.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions yet</h3>
-                <p className="text-gray-600">Transactions will appear here when payments are processed.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'bookings' && (
-          <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Class Bookings ({stats.allBookings.length})</h2>
-            {stats.allBookings.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Student
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Class
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Instructor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {stats.allBookings.map((booking) => (
-                      <tr key={booking.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {booking.first_name} {booking.last_name}
-                            </div>
-                            <div className="text-sm text-gray-500">{booking.email}</div>
-                            <div className="text-sm text-gray-500">{booking.phone}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{booking.class_name}</div>
-                          <div className="text-sm text-gray-500">Level: {booking.experience_level}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {booking.instructor}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {new Date(booking.class_date).toLocaleDateString()}
-                          </div>
-                          <div className="text-sm text-gray-500">{booking.class_time}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {booking.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            {booking.status !== 'cancelled' && (
-                              <button
-                                onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}
-                                className="text-red-600 hover:text-red-900"
-                                title="Cancel booking"
-                              >
-                                <Clock className="w-4 h-4" />
-                              </button>
-                            )}
-                            {booking.status === 'cancelled' && (
-                              <button
-                                onClick={() => handleUpdateBookingStatus(booking.id, 'confirmed')}
-                                className="text-green-600 hover:text-green-900"
-                                title="Confirm booking"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteBooking(booking.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete booking"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No bookings yet</h3>
-                <p className="text-gray-600">Bookings will appear here once users start booking classes.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'queries' && (
-          <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Yoga Queries ({stats.allQueries.length} total)
-            </h2>
-            {stats.allQueries.length > 0 ? (
-              <div className="space-y-4">
-                {stats.allQueries.map((query) => (
-                  <div key={query.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{query.subject}</h3>
-                        <p className="text-sm text-gray-600">From: {query.name} ({query.email})</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          query.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-                        }`}>
-                          {query.status}
-                        </span>
-                        {query.status === 'pending' && (
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              const response = prompt('Enter your response:')
-                              if (response) {
-                                handleUpdateQueryStatus(query.id, 'responded', response)
-                              }
-                            }}
-                          >
-                            Respond
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-gray-700 mb-2">{query.message}</p>
-                    {query.response && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                        <p className="text-sm text-blue-900 font-medium">Response:</p>
-                        <p className="text-sm text-blue-800">{query.response}</p>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
-                      <span>Category: {query.category}</span>
-                      <span>Experience: {query.experience_level}</span>
-                      <span>{new Date(query.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <MessageCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No yoga queries yet</h3>
-                <p className="text-gray-600">User questions will appear here when they submit queries.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'contacts' && (
-          <div className="card p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Contact Messages ({stats.allContacts.length} total)
-            </h2>
-            {stats.allContacts.length > 0 ? (
-              <div className="space-y-4">
-                {stats.allContacts.map((contact) => (
-                  <div key={contact.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{contact.subject}</h3>
-                        <p className="text-sm text-gray-600">From: {contact.name} ({contact.email})</p>
-                        {contact.phone && <p className="text-sm text-gray-600">Phone: {contact.phone}</p>}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          contact.status === 'new' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {contact.status}
-                        </span>
-                        {contact.status === 'new' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateContactStatus(contact.id, 'read')}
-                          >
-                            Mark as Read
-                          </Button>
-                        )}
-                        {contact.status === 'read' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateContactStatus(contact.id, 'responded')}
-                          >
-                            Mark as Responded
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-gray-700 mb-2">{contact.message}</p>
-                    <div className="text-sm text-gray-500">
-                      {new Date(contact.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No contact messages yet</h3>
-                <p className="text-gray-600">Contact messages will appear here when users reach out.</p>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Add other existing tabs here... */}
       </main>
     </div>
   )

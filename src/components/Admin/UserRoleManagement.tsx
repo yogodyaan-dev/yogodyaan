@@ -134,9 +134,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
         const currentUser = await supabase.auth.getUser()
         const assignedById = currentUser.data.user?.id
         
-        const currentUser = await supabase.auth.getUser()
-        const assignedById = currentUser.data.user?.id
-        
         const roleRecords = rolesToAdd.map(roleName => ({
           user_id: userId,
           role_id: roleData.find(r => r.name === roleName)!.id,

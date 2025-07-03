@@ -10,7 +10,14 @@ import {
   Edit,
   Trash2,
   CheckCircle,
-  Clock
+  Clock,
+  UserPlus,
+  GraduationCap,
+  CreditCard,
+  BarChart3,
+  Settings,
+  Star,
+  TrendingUp
 } from 'lucide-react'
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'
@@ -25,12 +32,20 @@ interface DashboardStats {
   totalArticles: number
   publishedArticles: number
   totalViews: number
+  totalUsers: number
+  activeSubscriptions: number
+  monthlyRevenue: number
   recentBookings: any[]
   pendingQueries: any[]
   newContacts: any[]
   allBookings: any[]
   allQueries: any[]
   allContacts: any[]
+  allUsers: any[]
+  allInstructors: any[]
+  allClassTypes: any[]
+  allSubscriptions: any[]
+  allTransactions: any[]
 }
 
 export function AdminDashboard() {
@@ -55,111 +70,50 @@ export function AdminDashboard() {
       console.log('Fetching dashboard data for admin:', admin?.email)
 
       // Fetch all data with better error handling
-      const [bookingsRes, queriesRes, contactsRes, articlesRes, viewsRes] = await Promise.allSettled([
-        supabase
-          .from('bookings')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('yoga_queries')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('contact_messages')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('articles')
-          .select('*')
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('article_views')
-          .select('*')
+      const [
+        bookingsRes, 
+        queriesRes, 
+        contactsRes, 
+        articlesRes, 
+        viewsRes,
+        usersRes,
+        instructorsRes,
+        classTypesRes,
+        subscriptionsRes,
+        transactionsRes
+      ] = await Promise.allSettled([
+        supabase.from('bookings').select('*').order('created_at', { ascending: false }),
+        supabase.from('yoga_queries').select('*').order('created_at', { ascending: false }),
+        supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
+        supabase.from('articles').select('*').order('created_at', { ascending: false }),
+        supabase.from('article_views').select('*'),
+        supabase.from('profiles').select('*, auth.users!inner(email, created_at)'),
+        supabase.from('instructors').select('*').order('created_at', { ascending: false }),
+        supabase.from('class_types').select('*').order('created_at', { ascending: false }),
+        supabase.from('user_subscriptions').select('*, subscription_plans(*)').order('created_at', { ascending: false }),
+        supabase.from('transactions').select('*').order('created_at', { ascending: false })
       ])
 
-      console.log('Fetch results:', {
-        bookings: bookingsRes,
-        queries: queriesRes,
-        contacts: contactsRes,
-        articles: articlesRes,
-        views: viewsRes
-      })
+      // Extract data with fallbacks
+      const bookings = bookingsRes.status === 'fulfilled' && !bookingsRes.value.error ? bookingsRes.value.data || [] : []
+      const queries = queriesRes.status === 'fulfilled' && !queriesRes.value.error ? queriesRes.value.data || [] : []
+      const contacts = contactsRes.status === 'fulfilled' && !contactsRes.value.error ? contactsRes.value.data || [] : []
+      const articles = articlesRes.status === 'fulfilled' && !articlesRes.value.error ? articlesRes.value.data || [] : []
+      const views = viewsRes.status === 'fulfilled' && !viewsRes.value.error ? viewsRes.value.data || [] : []
+      const users = usersRes.status === 'fulfilled' && !usersRes.value.error ? usersRes.value.data || [] : []
+      const instructors = instructorsRes.status === 'fulfilled' && !instructorsRes.value.error ? instructorsRes.value.data || [] : []
+      const classTypes = classTypesRes.status === 'fulfilled' && !classTypesRes.value.error ? classTypesRes.value.data || [] : []
+      const subscriptions = subscriptionsRes.status === 'fulfilled' && !subscriptionsRes.value.error ? subscriptionsRes.value.data || [] : []
+      const transactions = transactionsRes.status === 'fulfilled' && !transactionsRes.value.error ? transactionsRes.value.data || [] : []
 
-      // Extract data with fallbacks and detailed error logging
-      let bookings: any[] = []
-      let queries: any[] = []
-      let contacts: any[] = []
-      let articles: any[] = []
-      let views: any[] = []
-
-      if (bookingsRes.status === 'fulfilled') {
-        if (bookingsRes.value.error) {
-          console.error('Bookings error:', bookingsRes.value.error)
-        } else {
-          bookings = bookingsRes.value.data || []
-        }
-      } else {
-        console.error('Bookings fetch failed:', bookingsRes.reason)
-      }
-
-      if (queriesRes.status === 'fulfilled') {
-        if (queriesRes.value.error) {
-          console.error('Queries error:', queriesRes.value.error)
-        } else {
-          queries = queriesRes.value.data || []
-        }
-      } else {
-        console.error('Queries fetch failed:', queriesRes.reason)
-      }
-
-      if (contactsRes.status === 'fulfilled') {
-        if (contactsRes.value.error) {
-          console.error('Contacts error:', contactsRes.value.error)
-        } else {
-          contacts = contactsRes.value.data || []
-        }
-      } else {
-        console.error('Contacts fetch failed:', contactsRes.reason)
-      }
-
-      if (articlesRes.status === 'fulfilled') {
-        if (articlesRes.value.error) {
-          console.error('Articles error:', articlesRes.value.error)
-        } else {
-          articles = articlesRes.value.data || []
-        }
-      } else {
-        console.error('Articles fetch failed:', articlesRes.reason)
-      }
-
-      if (viewsRes.status === 'fulfilled') {
-        if (viewsRes.value.error) {
-          console.error('Views error:', viewsRes.value.error)
-        } else {
-          views = viewsRes.value.data || []
-        }
-      } else {
-        console.error('Views fetch failed:', viewsRes.reason)
-      }
-
-      console.log('Processed data:', {
-        bookings: bookings.length,
-        queries: queries.length,
-        contacts: contacts.length,
-        articles: articles.length,
-        views: views.length
-      })
-
-      // Filter pending queries and new contacts
+      // Filter data
       const pendingQueries = queries.filter(q => q.status === 'pending')
       const newContacts = contacts.filter(c => c.status === 'new')
-
-      console.log('Filtered data:', {
-        pendingQueries: pendingQueries.length,
-        newContacts: newContacts.length,
-        totalQueries: queries.length,
-        totalContacts: contacts.length
-      })
+      const activeSubscriptions = subscriptions.filter(s => s.status === 'active')
+      const completedTransactions = transactions.filter(t => t.status === 'completed')
+      const monthlyRevenue = completedTransactions
+        .filter(t => new Date(t.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
 
       setStats({
         totalBookings: bookings.length,
@@ -168,16 +122,23 @@ export function AdminDashboard() {
         totalArticles: articles.length,
         publishedArticles: articles.filter(a => a.status === 'published').length,
         totalViews: views.length,
+        totalUsers: users.length,
+        activeSubscriptions: activeSubscriptions.length,
+        monthlyRevenue,
         recentBookings: bookings.slice(0, 5),
         pendingQueries: pendingQueries.slice(0, 10),
         newContacts: newContacts.slice(0, 10),
         allBookings: bookings,
         allQueries: queries,
-        allContacts: contacts
+        allContacts: contacts,
+        allUsers: users,
+        allInstructors: instructors,
+        allClassTypes: classTypes,
+        allSubscriptions: subscriptions,
+        allTransactions: transactions
       })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      // Set empty stats to prevent crashes
       setStats({
         totalBookings: 0,
         totalQueries: 0,
@@ -185,12 +146,20 @@ export function AdminDashboard() {
         totalArticles: 0,
         publishedArticles: 0,
         totalViews: 0,
+        totalUsers: 0,
+        activeSubscriptions: 0,
+        monthlyRevenue: 0,
         recentBookings: [],
         pendingQueries: [],
         newContacts: [],
         allBookings: [],
         allQueries: [],
-        allContacts: []
+        allContacts: [],
+        allUsers: [],
+        allInstructors: [],
+        allClassTypes: [],
+        allSubscriptions: [],
+        allTransactions: []
       })
     } finally {
       setLoading(false)
@@ -217,7 +186,6 @@ export function AdminDashboard() {
 
       if (error) throw error
 
-      // Refresh data
       await fetchDashboardData()
       alert('Query updated successfully!')
     } catch (error) {
@@ -235,7 +203,6 @@ export function AdminDashboard() {
 
       if (error) throw error
 
-      // Refresh data
       await fetchDashboardData()
       alert('Contact status updated successfully!')
     } catch (error) {
@@ -255,7 +222,6 @@ export function AdminDashboard() {
 
       if (error) throw error
 
-      // Refresh data
       await fetchDashboardData()
       alert('Booking deleted successfully!')
     } catch (error) {
@@ -273,13 +239,19 @@ export function AdminDashboard() {
 
       if (error) throw error
 
-      // Refresh data
       await fetchDashboardData()
       alert('Booking status updated successfully!')
     } catch (error) {
       console.error('Error updating booking:', error)
       alert('Failed to update booking status')
     }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
   }
 
   if (loading) {
@@ -305,28 +277,40 @@ export function AdminDashboard() {
 
   const statCards = [
     {
-      title: 'Total Bookings',
-      value: stats.totalBookings,
-      icon: <Calendar className="w-8 h-8 text-blue-600" />,
+      title: 'Total Users',
+      value: stats.totalUsers,
+      icon: <UsersIcon className="w-8 h-8 text-blue-600" />,
       color: 'bg-blue-50 border-blue-200'
     },
     {
-      title: 'Yoga Queries',
-      value: stats.totalQueries,
-      icon: <MessageCircle className="w-8 h-8 text-purple-600" />,
+      title: 'Total Bookings',
+      value: stats.totalBookings,
+      icon: <Calendar className="w-8 h-8 text-green-600" />,
+      color: 'bg-green-50 border-green-200'
+    },
+    {
+      title: 'Active Subscriptions',
+      value: stats.activeSubscriptions,
+      icon: <CreditCard className="w-8 h-8 text-purple-600" />,
       color: 'bg-purple-50 border-purple-200'
     },
     {
-      title: 'Contact Messages',
-      value: stats.totalContacts,
-      icon: <Mail className="w-8 h-8 text-green-600" />,
-      color: 'bg-green-50 border-green-200'
+      title: 'Monthly Revenue',
+      value: formatCurrency(stats.monthlyRevenue),
+      icon: <TrendingUp className="w-8 h-8 text-emerald-600" />,
+      color: 'bg-emerald-50 border-emerald-200'
     },
     {
       title: 'Published Articles',
       value: stats.publishedArticles,
       icon: <BookOpen className="w-8 h-8 text-orange-600" />,
       color: 'bg-orange-50 border-orange-200'
+    },
+    {
+      title: 'Pending Queries',
+      value: stats.pendingQueries.length,
+      icon: <MessageCircle className="w-8 h-8 text-red-600" />,
+      color: 'bg-red-50 border-red-200'
     }
   ]
 
@@ -369,31 +353,37 @@ export function AdminDashboard() {
       {/* Navigation Tabs */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
+          <nav className="flex space-x-8 overflow-x-auto">
             {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'articles', label: 'Articles' },
-              { id: 'bookings', label: 'Bookings' },
-              { id: 'queries', label: 'Yoga Queries' },
-              { id: 'contacts', label: 'Contact Messages' }
+              { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+              { id: 'users', label: 'User Management', icon: <UsersIcon className="w-4 h-4" /> },
+              { id: 'instructors', label: 'Instructors', icon: <GraduationCap className="w-4 h-4" /> },
+              { id: 'classes', label: 'Class Types', icon: <Calendar className="w-4 h-4" /> },
+              { id: 'articles', label: 'Articles', icon: <BookOpen className="w-4 h-4" /> },
+              { id: 'bookings', label: 'Bookings', icon: <Calendar className="w-4 h-4" /> },
+              { id: 'subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-4 h-4" /> },
+              { id: 'transactions', label: 'Transactions', icon: <TrendingUp className="w-4 h-4" /> },
+              { id: 'queries', label: 'Yoga Queries', icon: <MessageCircle className="w-4 h-4" /> },
+              { id: 'contacts', label: 'Contact Messages', icon: <Mail className="w-4 h-4" /> }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-emerald-500 text-emerald-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                {tab.label}
+                {tab.icon}
+                <span>{tab.label}</span>
                 {tab.id === 'queries' && stats.pendingQueries.length > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                  <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
                     {stats.pendingQueries.length}
                   </span>
                 )}
                 {tab.id === 'contacts' && stats.newContacts.length > 0 && (
-                  <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                  <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
                     {stats.newContacts.length}
                   </span>
                 )}
@@ -408,7 +398,7 @@ export function AdminDashboard() {
         {activeTab === 'overview' && (
           <div className="space-y-8">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {statCards.map((stat, index) => (
                 <div key={index} className={`card p-6 border-2 ${stat.color}`}>
                   <div className="flex items-center justify-between">
@@ -491,7 +481,360 @@ export function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'users' && (
+          <div className="card p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">User Management ({stats.allUsers.length})</h2>
+            {stats.allUsers.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Experience Level
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.allUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.full_name || 'No name provided'}
+                            </div>
+                            <div className="text-sm text-gray-500">{user.users?.email}</div>
+                            {user.phone && <div className="text-sm text-gray-500">{user.phone}</div>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
+                            {user.experience_level}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(user.users?.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button className="text-blue-600 hover:text-blue-900">
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <UsersIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No users yet</h3>
+                <p className="text-gray-600">Users will appear here once they sign up.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'instructors' && (
+          <div className="card p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Instructors ({stats.allInstructors.length})</h2>
+              <Button className="flex items-center">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Instructor
+              </Button>
+            </div>
+            {stats.allInstructors.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {stats.allInstructors.map((instructor) => (
+                  <div key={instructor.id} className="bg-white border rounded-lg p-6">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <GraduationCap className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{instructor.name}</h3>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          instructor.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {instructor.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                    {instructor.bio && (
+                      <p className="text-gray-600 text-sm mb-4">{instructor.bio}</p>
+                    )}
+                    {instructor.specializations && instructor.specializations.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Specializations:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {instructor.specializations.map((spec: string, index: number) => (
+                            <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                              {spec}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline">
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No instructors yet</h3>
+                <p className="text-gray-600">Add instructors to start offering classes.</p>
+                <Button className="mt-4">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add First Instructor
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'classes' && (
+          <div className="card p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Class Types ({stats.allClassTypes.length})</h2>
+              <Button className="flex items-center">
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Class Type
+              </Button>
+            </div>
+            {stats.allClassTypes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Class Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Duration
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Difficulty
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.allClassTypes.map((classType) => (
+                      <tr key={classType.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{classType.name}</div>
+                            <div className="text-sm text-gray-500">{classType.description}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classType.duration_minutes} min
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
+                            {classType.difficulty_level}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classType.price ? formatCurrency(parseFloat(classType.price)) : 'Free'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            classType.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {classType.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button className="text-blue-600 hover:text-blue-900">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button className="text-red-600 hover:text-red-900">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No class types yet</h3>
+                <p className="text-gray-600">Create class types to organize your offerings.</p>
+                <Button className="mt-4">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add First Class Type
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'articles' && <ArticleManagement />}
+
+        {activeTab === 'subscriptions' && (
+          <div className="card p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Subscriptions ({stats.allSubscriptions.length})</h2>
+            {stats.allSubscriptions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Plan
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Credits
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expires
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.allSubscriptions.map((subscription) => (
+                      <tr key={subscription.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          User ID: {subscription.user_id.substring(0, 8)}...
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {subscription.subscription_plans?.name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            subscription.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {subscription.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {subscription.credits_remaining || 'Unlimited'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(subscription.current_period_end).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No subscriptions yet</h3>
+                <p className="text-gray-600">Subscriptions will appear here when users subscribe.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <div className="card p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Transactions ({stats.allTransactions.length})</h2>
+            {stats.allTransactions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Transaction
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {stats.allTransactions.map((transaction) => (
+                      <tr key={transaction.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {transaction.id.substring(0, 8)}...
+                            </div>
+                            <div className="text-sm text-gray-500">{transaction.description}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatCurrency(parseFloat(transaction.amount))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
+                            {transaction.transaction_type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            transaction.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {transaction.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(transaction.created_at).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <TrendingUp className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions yet</h3>
+                <p className="text-gray-600">Transactions will appear here when payments are processed.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === 'bookings' && (
           <div className="card p-6">

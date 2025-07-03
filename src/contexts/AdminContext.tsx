@@ -19,7 +19,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
 
   const checkAdminStatus = async (user: User | null) => {
     if (!user) {
-      console.log('No user provided to checkAdminStatus')
       setIsAdmin(false)
       return
     }
@@ -27,26 +26,21 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Checking admin status for user:', user.email)
       
-      // Try with service role key for debugging
       const { data, error } = await supabase
         .from('admin_users')
         .select('role')
         .eq('email', user.email)
-        .maybeSingle() // Use maybeSingle instead of single to avoid errors when no record found
+        .maybeSingle()
 
       console.log('Admin check result:', { data, error })
 
       if (error) {
         console.error('Admin check error:', error)
-        // For debugging, let's check if it's a 500 error and try a different approach
-        if (error.message.includes('500')) {
-          console.log('Got 500 error, trying direct database query...')
-          // Fallback: check if email matches known admin email
-          if (user.email === 'gourab.master@gmail.com') {
-            console.log('Allowing access for known admin email')
-            setIsAdmin(true)
-            return
-          }
+        // Fallback for known admin email during debugging
+        if (user.email === 'gourab.master@gmail.com') {
+          console.log('Allowing access for known admin email')
+          setIsAdmin(true)
+          return
         }
         setIsAdmin(false)
       } else if (data && data.role) {
@@ -69,25 +63,38 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    let mounted = true
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+      
       const user = session?.user ?? null
       console.log('Initial session user:', user?.email)
       setAdmin(user)
-      checkAdminStatus(user).finally(() => setLoading(false))
+      checkAdminStatus(user).finally(() => {
+        if (mounted) setLoading(false)
+      })
     })
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        if (!mounted) return
+        
         const user = session?.user ?? null
         console.log('Auth state changed, user:', user?.email)
         setAdmin(user)
-        checkAdminStatus(user).finally(() => setLoading(false))
+        checkAdminStatus(user).finally(() => {
+          if (mounted) setLoading(false)
+        })
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signInAdmin = async (email: string, password: string) => {

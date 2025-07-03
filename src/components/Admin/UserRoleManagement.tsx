@@ -106,6 +106,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       if (fetchError) throw fetchError
 
       const existingRoles = existingRoleData?.map(item => item.roles?.name) || []
+      const existingRoles = existingRoleData?.filter(item => item.roles).map(item => item.roles!.name) || []
       
       // 2. Get IDs for all selected roles
       const { data: roleData, error: roleError } = await supabase
@@ -122,7 +123,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 3. Delete roles that are no longer selected
       const rolesToRemove = existingRoles.filter(role => !selectedRoles.includes(role))
       if (rolesToRemove.length > 0) {
-        const { data: removeData, error: removeError } = await supabase
+        const { error: removeError } = await supabase
           .from('user_roles')
           .delete()
           .eq('user_id', userId)

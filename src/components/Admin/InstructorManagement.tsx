@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { 
-  Plus, Edit, Trash2, Eye, Calendar, DollarSign, 
-  Award, GraduationCap, Mail, Phone, Clock, Check,
+  Plus, Edit, Trash2, Calendar, DollarSign, 
+  Award, GraduationCap, Mail, Phone, Clock,
   Search, Filter, AlertTriangle, X
 } from 'lucide-react'
 import { Button } from '../UI/Button'

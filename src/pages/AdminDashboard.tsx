@@ -12,7 +12,8 @@ import {
   BarChart3,
   TrendingUp,
   Settings,
-  FileText
+  FileText,
+  Shield
 } from 'lucide-react'
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'

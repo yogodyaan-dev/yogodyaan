@@ -1500,7 +1500,7 @@ export function InstructorManagement() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Assign Class Modal */}
       {showAssignClassModal && selectedInstructor && (

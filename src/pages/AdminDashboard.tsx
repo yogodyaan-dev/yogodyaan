@@ -85,7 +85,7 @@ export function AdminDashboard() {
         supabase.from('contact_messages').select('*').order('created_at', { ascending: false }),
         supabase.from('articles').select('*').order('created_at', { ascending: false }),
         supabase.from('article_views').select('*'),
-        supabase.from('profiles').select('*, auth.users!inner(email, created_at)'),
+        supabase.rpc('get_user_profiles_for_admin'),
         supabase.from('instructors').select('*').order('created_at', { ascending: false }),
         supabase.from('class_types').select('*').order('created_at', { ascending: false }),
         supabase.from('user_subscriptions').select('*, subscription_plans(*)').order('created_at', { ascending: false }),
@@ -103,6 +103,11 @@ export function AdminDashboard() {
       const classTypes = classTypesRes.status === 'fulfilled' && !classTypesRes.value.error ? classTypesRes.value.data || [] : []
       const subscriptions = subscriptionsRes.status === 'fulfilled' && !subscriptionsRes.value.error ? subscriptionsRes.value.data || [] : []
       const transactions = transactionsRes.status === 'fulfilled' && !transactionsRes.value.error ? transactionsRes.value.data || [] : []
+
+      // Log any errors for debugging
+      if (usersRes.status === 'rejected' || (usersRes.status === 'fulfilled' && usersRes.value.error)) {
+        console.error('Error fetching users:', usersRes.status === 'rejected' ? usersRes.reason : usersRes.value.error)
+      }
 
       // Filter data
       const pendingQueries = queries.filter(q => q.status === 'pending')
@@ -509,7 +514,7 @@ export function AdminDashboard() {
                             <div className="text-sm font-medium text-gray-900">
                               {user.full_name || 'No name provided'}
                             </div>
-                            <div className="text-sm text-gray-500">{user.users?.email}</div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
                             {user.phone && <div className="text-sm text-gray-500">{user.phone}</div>}
                           </div>
                         </td>
@@ -519,7 +524,7 @@ export function AdminDashboard() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(user.users?.created_at).toLocaleDateString()}
+                          {new Date(user.user_created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button className="text-blue-600 hover:text-blue-900">

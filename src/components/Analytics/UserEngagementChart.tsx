@@ -98,7 +98,7 @@ export function UserEngagementChart() {
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Engaged Users</h3>
       
       <div className="space-y-4">
-        {engagementData.map((user, index) => (
+        {engagementData.map((user, _) => (
           <div
             key={user.user_id}
             className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"

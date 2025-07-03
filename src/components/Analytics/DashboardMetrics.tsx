@@ -6,10 +6,7 @@ import {
   Calendar, 
   DollarSign, 
   TrendingUp, 
-  BookOpen, 
-  MessageCircle,
-  CreditCard,
-  Star
+  CreditCard
 } from 'lucide-react'
 
 interface Metric {

@@ -23,6 +23,7 @@ import { BusinessSettings } from '../components/Admin/BusinessSettings'
 import { FormSubmissions } from '../components/Admin/FormSubmissions'
 import { NewsletterManagement } from '../components/Admin/NewsletterManagement'
 import { BookingManagement } from '../components/Admin/BookingManagement'
+import { InstructorManagement } from '../components/Admin/InstructorManagement'
 import { UserRoleManagement } from '../components/Admin/UserRoleManagement'
 import { DashboardMetrics } from '../components/Analytics/DashboardMetrics'
 import { UserEngagementChart } from '../components/Analytics/UserEngagementChart'
@@ -531,8 +532,9 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {/* Articles Tab */}
+        {/* Individual Tabs */}
         {activeTab === 'articles' && <ArticleManagement />}
+        {activeTab === 'instructors' && <InstructorManagement />}
 
         {/* Bookings Tab */}
         {activeTab === 'bookings' && <BookingManagement />}

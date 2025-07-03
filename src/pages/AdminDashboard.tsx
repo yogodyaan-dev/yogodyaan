@@ -178,46 +178,6 @@ export function AdminDashboard() {
     navigate('/')
   }
 
-  const handleUpdateQueryStatus = async (queryId: string, status: string, response?: string) => {
-    try {
-      const updateData: any = { status }
-      if (response) {
-        updateData.response = response
-        updateData.responded_at = new Date().toISOString()
-      }
-
-      const { error } = await supabase
-        .from('yoga_queries')
-        .update(updateData)
-        .eq('id', queryId)
-
-      if (error) throw error
-
-      await fetchDashboardData()
-      alert('Query updated successfully!')
-    } catch (error) {
-      console.error('Error updating query:', error)
-      alert('Failed to update query')
-    }
-  }
-
-  const handleUpdateContactStatus = async (contactId: string, status: string) => {
-    try {
-      const { error } = await supabase
-        .from('contact_messages')
-        .update({ status })
-        .eq('id', contactId)
-
-      if (error) throw error
-
-      await fetchDashboardData()
-      alert('Contact status updated successfully!')
-    } catch (error) {
-      console.error('Error updating contact:', error)
-      alert('Failed to update contact status')
-    }
-  }
-
   const handleDeleteBooking = async (bookingId: string) => {
     if (!confirm('Are you sure you want to delete this booking?')) return
 

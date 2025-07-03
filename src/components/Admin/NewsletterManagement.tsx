@@ -27,7 +27,6 @@ export function NewsletterManagement() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('newsletters')
-  const [showCreateForm, setShowCreateForm] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -71,7 +70,6 @@ export function NewsletterManagement() {
   }
 
   const handleCreateNewsletter = () => {
-    setShowCreateForm(true)
     // TODO: Implement newsletter creation form/modal
     console.log('Create newsletter clicked - form/modal to be implemented')
   }

@@ -55,6 +55,7 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [selectedUser, setSelectedUser] = useState<any>(null)
 
   useEffect(() => {
     if (!isAdmin) {
@@ -370,7 +371,10 @@ export function AdminDashboard() {
                           {new Date(user.user_created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button className="text-blue-600 hover:text-blue-900">
+                          <button 
+                            onClick={() => setSelectedUser(user)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
                             View Details
                           </button>
                         </td>
@@ -384,6 +388,94 @@ export function AdminDashboard() {
                 <UsersIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No users yet</h3>
                 <p className="text-gray-600">Users will appear here once they sign up.</p>
+              </div>
+            )}
+
+            {/* User Details Modal */}
+            {selectedUser && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="p-6 border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        User Details
+                      </h3>
+                      <button
+                        onClick={() => setSelectedUser(null)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 space-y-4">
+                    {/* User info */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Basic Information</h4>
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                        <p><strong>Name:</strong> {selectedUser.full_name || 'No name provided'}</p>
+                        <p><strong>Email:</strong> {selectedUser.email}</p>
+                        <p><strong>Experience Level:</strong> <span className="capitalize">{selectedUser.experience_level}</span></p>
+                        <p><strong>Joined:</strong> {new Date(selectedUser.user_created_at).toLocaleDateString()}</p>
+                        {selectedUser.phone && <p><strong>Phone:</strong> {selectedUser.phone}</p>}
+                      </div>
+                    </div>
+
+                    {/* Bio if available */}
+                    {selectedUser.bio && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="text-gray-700">{selectedUser.bio}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Roles */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">User Roles</h4>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        {selectedUser.user_roles && selectedUser.user_roles.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {selectedUser.user_roles.map((role: string, index: number) => (
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs capitalize">
+                                {role}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">No roles assigned</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Activity section */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-2">Activity</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50 rounded-lg p-4 text-center">
+                          <p className="text-2xl font-bold text-blue-600">{selectedUser.total_bookings || 0}</p>
+                          <p className="text-sm text-gray-600">Bookings</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-4 text-center">
+                          <p className="text-2xl font-bold text-green-600">{selectedUser.attended_classes || 0}</p>
+                          <p className="text-sm text-gray-600">Classes Attended</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 flex justify-end">
+                      <Button
+                        onClick={() => setSelectedUser(null)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

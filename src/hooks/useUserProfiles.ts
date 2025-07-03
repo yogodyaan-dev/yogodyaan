@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 interface UserProfile {
   id: string
+  user_id: string
   full_name: string
   phone: string
   bio: string
@@ -10,7 +11,11 @@ interface UserProfile {
   created_at: string
   updated_at: string
   email: string
-  user_created_at: string
+  user_created_at: string  
+  user_roles?: string[]
+  total_bookings?: number
+  attended_classes?: number
+  articles_viewed?: number
 }
 
 export function useUserProfiles() {
@@ -23,7 +28,7 @@ export function useUserProfiles() {
       setLoading(true)
       setError(null)
 
-      const { data, error: fetchError } = await supabase
+      let { data, error: fetchError } = await supabase
         .rpc('get_user_profiles_for_admin')
 
       if (fetchError) {
@@ -56,8 +61,12 @@ export function useUserProfiles() {
 
         const transformedData = (fallbackData || []).map(profile => ({
           ...profile,
+          user_id: profile.id, // If profiles don't have user_id field in the fallback
           experience_level: profile.role || 'user',
-          user_created_at: profile.created_at
+          user_created_at: profile.created_at,
+          total_bookings: 0,
+          attended_classes: 0,
+          articles_viewed: 0
         }))
 
         setProfiles(transformedData)

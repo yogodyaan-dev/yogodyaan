@@ -130,10 +130,14 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 4. Add newly selected roles
       const rolesToAdd = selectedRoles.filter(role => !existingRoles.includes(role))
       if (rolesToAdd.length > 0) {
+        // Get the current user ID before mapping
+        const currentUser = await supabase.auth.getUser()
+        const assignedById = currentUser.data.user?.id
+        
         const roleRecords = rolesToAdd.map(roleName => ({
           user_id: userId,
           role_id: roleData.find(r => r.name === roleName)!.id,
-          assigned_by: (await supabase.auth.getUser()).data.user?.id
+          assigned_by: assignedById
         }))
         
         const { error: insertError } = await supabase
@@ -150,7 +154,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 6. Log role change for history
       const changeDetails = {
         user_id: userId,
-        changed_by: (await supabase.auth.getUser()).data.user?.id || 'unknown',
+        changed_by: assignedById || 'unknown',
         old_roles: existingRoles,
         new_roles: selectedRoles,
         timestamp: new Date().toISOString()

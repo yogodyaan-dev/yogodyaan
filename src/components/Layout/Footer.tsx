@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter } from 'lucide-react'
+import { NewsletterSignup } from '../Forms/NewsletterSignup'
 
 export function Footer() {
   return (
@@ -36,8 +37,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li><Link to="/about" className="text-gray-300 hover:text-emerald-400 transition-colors">About Us</Link></li>
               <li><Link to="/book-class" className="text-gray-300 hover:text-emerald-400 transition-colors">Book Class</Link></li>
-              <li><Link to="/yoga-query" className="text-gray-300 hover:text-emerald-400 transition-colors">Yoga Query</Link></li>
-              <li><Link to="/faq" className="text-gray-300 hover:text-emerald-400 transition-colors">FAQ</Link></li>
+              <li><Link to="/learning" className="text-gray-300 hover:text-emerald-400 transition-colors">Learning Center</Link></li>
               <li><Link to="/contact" className="text-gray-300 hover:text-emerald-400 transition-colors">Contact</Link></li>
             </ul>
           </div>
@@ -59,6 +59,16 @@ export function Footer() {
                 <span className="text-gray-300">123 Wellness Street<br />Yoga City, YC 12345</span>
               </li>
             </ul>
+          </div>
+        </div>
+
+        {/* Newsletter Signup */}
+        <div className="mt-12 pt-8 border-t border-gray-800">
+          <div className="max-w-md mx-auto">
+            <NewsletterSignup 
+              className="bg-gray-800 border border-gray-700" 
+              showTitle={false}
+            />
           </div>
         </div>
 

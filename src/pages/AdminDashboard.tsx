@@ -14,11 +14,16 @@ import {
   GraduationCap,
   CreditCard,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  FileText
 } from 'lucide-react'
 import { Button } from '../components/UI/Button'
 import { LoadingSpinner } from '../components/UI/LoadingSpinner'
 import { ArticleManagement } from '../components/Admin/ArticleManagement'
+import { BusinessSettings } from '../components/Admin/BusinessSettings'
+import { FormSubmissions } from '../components/Admin/FormSubmissions'
+import { NewsletterManagement } from '../components/Admin/NewsletterManagement'
 import { DashboardMetrics } from '../components/Analytics/DashboardMetrics'
 import { UserEngagementChart } from '../components/Analytics/UserEngagementChart'
 import { useAdmin } from '../contexts/AdminContext'
@@ -331,7 +336,10 @@ export function AdminDashboard() {
               { id: 'subscriptions', label: 'Subscriptions', icon: <CreditCard className="w-4 h-4" /> },
               { id: 'transactions', label: 'Transactions', icon: <TrendingUp className="w-4 h-4" /> },
               { id: 'queries', label: 'Yoga Queries', icon: <MessageCircle className="w-4 h-4" /> },
-              { id: 'contacts', label: 'Contact Messages', icon: <Mail className="w-4 h-4" /> }
+              { id: 'contacts', label: 'Contact Messages', icon: <Mail className="w-4 h-4" /> },
+              { id: 'submissions', label: 'Form Submissions', icon: <FileText className="w-4 h-4" /> },
+              { id: 'newsletter', label: 'Newsletter', icon: <Mail className="w-4 h-4" /> },
+              { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -463,6 +471,15 @@ export function AdminDashboard() {
 
         {/* Articles Tab */}
         {activeTab === 'articles' && <ArticleManagement />}
+
+        {/* Form Submissions Tab */}
+        {activeTab === 'submissions' && <FormSubmissions />}
+
+        {/* Newsletter Tab */}
+        {activeTab === 'newsletter' && <NewsletterManagement />}
+
+        {/* Business Settings Tab */}
+        {activeTab === 'settings' && <BusinessSettings />}
 
         {/* Instructors Tab */}
         {activeTab === 'instructors' && (

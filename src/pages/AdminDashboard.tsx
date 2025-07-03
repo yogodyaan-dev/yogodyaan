@@ -92,7 +92,7 @@ export function AdminDashboard() {
         supabase.from('transactions').select('*').order('created_at', { ascending: false })
       ])
 
-      // Extract data with fallbacks
+      // Extract data with fallbacks and better error handling
       const bookings = bookingsRes.status === 'fulfilled' && !bookingsRes.value.error ? bookingsRes.value.data || [] : []
       const queries = queriesRes.status === 'fulfilled' && !queriesRes.value.error ? queriesRes.value.data || [] : []
       const contacts = contactsRes.status === 'fulfilled' && !contactsRes.value.error ? contactsRes.value.data || [] : []
@@ -103,21 +103,32 @@ export function AdminDashboard() {
       const subscriptions = subscriptionsRes.status === 'fulfilled' && !subscriptionsRes.value.error ? subscriptionsRes.value.data || [] : []
       const transactions = transactionsRes.status === 'fulfilled' && !transactionsRes.value.error ? transactionsRes.value.data || [] : []
 
-      // Filter data
-      const pendingQueries = queries.filter(q => q.status === 'pending')
-      const newContacts = contacts.filter(c => c.status === 'new')
-      const activeSubscriptions = subscriptions.filter(s => s.status === 'active')
-      const completedTransactions = transactions.filter(t => t.status === 'completed')
+      // Log any errors for debugging
+      if (bookingsRes.status === 'rejected') console.warn('Bookings fetch failed:', bookingsRes.reason)
+      if (queriesRes.status === 'rejected') console.warn('Queries fetch failed:', queriesRes.reason)
+      if (contactsRes.status === 'rejected') console.warn('Contacts fetch failed:', contactsRes.reason)
+      if (articlesRes.status === 'rejected') console.warn('Articles fetch failed:', articlesRes.reason)
+      if (viewsRes.status === 'rejected') console.warn('Views fetch failed:', viewsRes.reason)
+      if (instructorsRes.status === 'rejected') console.warn('Instructors fetch failed:', instructorsRes.reason)
+      if (classTypesRes.status === 'rejected') console.warn('Class types fetch failed:', classTypesRes.reason)
+      if (subscriptionsRes.status === 'rejected') console.warn('Subscriptions fetch failed:', subscriptionsRes.reason)
+      if (transactionsRes.status === 'rejected') console.warn('Transactions fetch failed:', transactionsRes.reason)
+
+      // Filter data safely
+      const pendingQueries = queries.filter(q => q?.status === 'pending')
+      const newContacts = contacts.filter(c => c?.status === 'new')
+      const activeSubscriptions = subscriptions.filter(s => s?.status === 'active')
+      const completedTransactions = transactions.filter(t => t?.status === 'completed')
       const monthlyRevenue = completedTransactions
-        .filter(t => new Date(t.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1))
-        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
+        .filter(t => t?.created_at && new Date(t.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1))
+        .reduce((sum, t) => sum + parseFloat(t?.amount || '0'), 0)
 
       setStats({
         totalBookings: bookings.length,
         totalQueries: queries.length,
         totalContacts: contacts.length,
         totalArticles: articles.length,
-        publishedArticles: articles.filter(a => a.status === 'published').length,
+        publishedArticles: articles.filter(a => a?.status === 'published').length,
         totalViews: views.length,
         totalUsers: profiles.length,
         activeSubscriptions: activeSubscriptions.length,
@@ -387,9 +398,9 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {/* Rest of the existing tabs remain the same */}
+        {/* Users Tab */}
         {activeTab === 'users' && (
-          <div className="card p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">User Management ({profiles.length})</h2>
             {profiles.length > 0 ? (
               <div className="overflow-x-auto">
@@ -450,7 +461,85 @@ export function AdminDashboard() {
           </div>
         )}
 
+        {/* Articles Tab */}
         {activeTab === 'articles' && <ArticleManagement />}
+
+        {/* Instructors Tab */}
+        {activeTab === 'instructors' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Instructors ({stats.allInstructors.length})</h2>
+            {stats.allInstructors.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {stats.allInstructors.map((instructor) => (
+                  <div key={instructor.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <h3 className="font-semibold text-lg text-gray-900">{instructor.name}</h3>
+                    <p className="text-sm text-gray-600 mt-2">{instructor.bio}</p>
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-500">Experience: {instructor.experience_years} years</p>
+                      {instructor.specialties && instructor.specialties.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">Specialties:</p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {instructor.specialties.map((specialty: string, index: number) => (
+                              <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                                {specialty}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No instructors yet</h3>
+                <p className="text-gray-600">Instructors will appear here once they are added.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Class Types Tab */}
+        {activeTab === 'classes' && (
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Class Types ({stats.allClassTypes.length})</h2>
+            {stats.allClassTypes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {stats.allClassTypes.map((classType) => (
+                  <div key={classType.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <h3 className="font-semibold text-lg text-gray-900">{classType.name}</h3>
+                    <p className="text-sm text-gray-600 mt-2">{classType.description}</p>
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm">
+                        <span className="text-gray-500">Level:</span> 
+                        <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded capitalize">
+                          {classType.difficulty_level}
+                        </span>
+                      </p>
+                      <p className="text-sm">
+                        <span className="text-gray-500">Price:</span> 
+                        <span className="ml-2 font-semibold">{formatCurrency(classType.price)}</span>
+                      </p>
+                      <p className="text-sm">
+                        <span className="text-gray-500">Duration:</span> 
+                        <span className="ml-2">{classType.duration_minutes} minutes</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No class types yet</h3>
+                <p className="text-gray-600">Class types will appear here once they are added.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Add other existing tabs here... */}
       </main>

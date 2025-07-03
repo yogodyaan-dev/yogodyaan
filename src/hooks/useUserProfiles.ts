@@ -26,12 +26,46 @@ export function useUserProfiles() {
       const { data, error: fetchError } = await supabase
         .rpc('get_user_profiles_for_admin')
 
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('RPC Error:', fetchError)
+        throw fetchError
+      }
 
       setProfiles(data || [])
     } catch (err: any) {
       console.error('Error fetching user profiles:', err)
       setError(err.message)
+      
+      // Fallback: try to fetch profiles directly if RPC fails
+      try {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            full_name,
+            phone,
+            bio,
+            role,
+            created_at,
+            updated_at,
+            email
+          `)
+          .order('created_at', { ascending: false })
+
+        if (fallbackError) throw fallbackError
+
+        const transformedData = (fallbackData || []).map(profile => ({
+          ...profile,
+          experience_level: profile.role || 'user',
+          user_created_at: profile.created_at
+        }))
+
+        setProfiles(transformedData)
+        setError(null)
+      } catch (fallbackErr: any) {
+        console.error('Fallback fetch also failed:', fallbackErr)
+        setError(fallbackErr.message)
+      }
     } finally {
       setLoading(false)
     }

@@ -71,6 +71,20 @@ export function UserEngagementChart() {
     }
   }
 
+  const formatLastActivity = (dateString: string) => {
+    if (!dateString) return 'Never'
+    
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+    
+    if (diffInDays === 0) return 'Today'
+    if (diffInDays === 1) return 'Yesterday'
+    if (diffInDays < 7) return `${diffInDays} days ago`
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`
+    return `${Math.floor(diffInDays / 30)} months ago`
+  }
+
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -87,7 +101,13 @@ export function UserEngagementChart() {
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">User Engagement</h3>
         <div className="text-center py-8">
-          <p className="text-red-600">Error loading engagement data: {error}</p>
+          <p className="text-red-600 mb-4">Error loading engagement data: {error}</p>
+          <button 
+            onClick={fetchEngagementData}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
         </div>
       </div>
     )
@@ -98,50 +118,59 @@ export function UserEngagementChart() {
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Engaged Users</h3>
       
       <div className="space-y-4">
-        {engagementData.map((user, _) => (
-          <div
-            key={user.user_id}
-            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 font-semibold">
-                  {(user.full_name || user.email).charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">
-                  {user.full_name || 'No name'}
-                </p>
-                <p className="text-sm text-gray-600">{user.email}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">
-                  {user.total_bookings} bookings
-                </p>
-                <p className="text-xs text-gray-600">
-                  {user.attended_classes} attended
-                </p>
+        {engagementData.length > 0 ? (
+          engagementData.map((user) => (
+            <div
+              key={user.user_id}
+              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-semibold">
+                    {(user.full_name || user.email || 'U').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {user.full_name || 'No name'}
+                  </p>
+                  <p className="text-sm text-gray-600">{user.email}</p>
+                  <p className="text-xs text-gray-500">
+                    Last active: {formatLastActivity(user.last_activity)}
+                  </p>
+                </div>
               </div>
               
-              <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(user.engagement_status)}`}>
-                {getStatusIcon(user.engagement_status)}
-                <span className="capitalize">{user.engagement_status}</span>
-              </span>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm font-medium text-gray-900">
+                    {user.total_bookings || 0} bookings
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {user.attended_classes || 0} attended
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {user.articles_viewed || 0} articles viewed
+                  </p>
+                </div>
+                
+                <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${getStatusColor(user.engagement_status)}`}>
+                  {getStatusIcon(user.engagement_status)}
+                  <span className="capitalize">{user.engagement_status}</span>
+                </span>
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No engagement data available</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Data will appear here once users start interacting with the platform
+            </p>
           </div>
-        ))}
+        )}
       </div>
-      
-      {engagementData.length === 0 && (
-        <div className="text-center py-8">
-          <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No engagement data available</p>
-        </div>
-      )}
     </div>
   )
 }

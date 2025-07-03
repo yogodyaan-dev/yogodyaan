@@ -53,7 +53,6 @@ export function useUserProfiles() {
         const transformedData = (fallbackData || []).map(profile => ({
           ...profile,
           user_id: profile.user_id || profile.id, // Ensure user_id is set
-          user_id: profile.id, // If profiles don't have user_id field in the fallback
           experience_level: profile.role || 'user', 
           user_created_at: profile.created_at, 
           total_bookings: 0, 

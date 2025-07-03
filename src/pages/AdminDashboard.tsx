@@ -15,8 +15,6 @@ import {
   GraduationCap,
   CreditCard,
   BarChart3,
-  Settings,
-  Star,
   TrendingUp
 } from 'lucide-react'
 import { Button } from '../components/UI/Button'

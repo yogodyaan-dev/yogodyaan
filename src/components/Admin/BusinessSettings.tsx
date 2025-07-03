@@ -43,7 +43,6 @@ export function BusinessSettings() {
     }
   }
 
-  const handleNestedChange = (key: string, nestedKey: string, value: string) => {
   const handleNestedChange = (key: string, nestedKey: string, value: any) => {
     setSettings(prev => ({
       ...prev,

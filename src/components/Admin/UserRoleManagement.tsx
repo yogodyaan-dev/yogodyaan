@@ -81,7 +81,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
     if (cachedRoles) {
       setSelectedRoles(JSON.parse(cachedRoles));
     }
-  }
+  }, [userId])
 
   const handleRoleToggle = (roleName: string) => {
     setSelectedRoles(prev => {

@@ -131,11 +131,10 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 2. Get IDs for all selected roles
       const { data: roleData, error: roleError } = await supabase
         .from('roles')
-        .select('id, name');
+        .select('id, name')
+        .in('name', selectedRoles)
       
       console.log('Role data for assignment:', roleData);
-      
-        .in('name', selectedRoles)
       
       if (roleError) throw roleError
       
@@ -144,9 +143,8 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       }
 
       // 3. Delete roles that are no longer selected
-      setSuccess('User roles updated successfully');
-      // Call the callback with the selected roles
-      onRoleUpdate(selectedRoles);
+      const rolesToRemove = existingRoles.filter(role => !selectedRoles.includes(role))
+      if (rolesToRemove.length > 0) {
         const { error: removeError } = await supabase
           .from('user_roles')
           .delete()
@@ -187,6 +185,10 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // Refresh role history
       await fetchRoleChangeHistory()
       
+      setSuccess('User roles updated successfully');
+      // Call the callback with the selected roles
+      onRoleUpdate(selectedRoles);
+      
       // Clear success message after a delay
       setTimeout(() => setSuccess(''), 3000)
       
@@ -194,6 +196,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       console.error('Error updating roles:', err.message)
       setError('Failed to update roles: ' + err.message)
     } finally {
+      setUpdating(false)
     }
   }
 

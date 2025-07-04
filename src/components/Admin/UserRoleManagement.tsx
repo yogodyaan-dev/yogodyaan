@@ -57,6 +57,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
   }
 
   const fetchRoleChangeHistory = async () => {
+    // For now we're using mock data, but this would typically fetch from a role_changes table
     try {
       // This would normally fetch from a role_changes table
       // For demo purposes, we're using mock data
@@ -73,11 +74,25 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       console.error('Error fetching role history:', err.message)
     }
   }
+  
+  // Load cached role selections when component mounts
+  useEffect(() => {
+    const cachedRoles = localStorage.getItem(`userRoles_${userId}`);
+    if (cachedRoles) {
+      setSelectedRoles(JSON.parse(cachedRoles));
+    }
+  }
 
   const handleRoleToggle = (roleName: string) => {
     setSelectedRoles(prev => {
       if (prev.includes(roleName)) {
-        return prev.filter(r => r !== roleName)
+        // Don't allow removing all roles - user must have at least one role
+        if (prev.length > 1) {
+          return prev.filter(r => r !== roleName);
+        } else {
+          setError("User must have at least one role");
+          return prev;
+        }
       } else {
         return [...prev, roleName]
       }
@@ -150,6 +165,9 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 5. Update local state and show success message
       setSuccess('User roles updated successfully')
       onRoleUpdate(selectedRoles)
+      
+      // Store the updated roles in localStorage for this user
+      localStorage.setItem(`userRoles_${userId}`, JSON.stringify(selectedRoles));
       
       // 6. Log role change for history
       const changeDetails = {

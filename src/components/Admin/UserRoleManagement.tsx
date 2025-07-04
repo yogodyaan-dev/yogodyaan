@@ -177,7 +177,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       await fetchRoleChangeHistory()
       
       setSuccess('User roles updated successfully');
-      // Call the callback with the selected roles
+      // Call the callback with the selected roles to update parent component
       onRoleUpdate(selectedRoles);
       
       // Clear success message after a delay

@@ -39,9 +39,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
     // Then fetch other data
     fetchAvailableRoles();
     fetchRoleChangeHistory();
-    // Then fetch other data
-    fetchAvailableRoles();
-    fetchRoleChangeHistory();
   }, [userId])
 
   const fetchAvailableRoles = async () => {
@@ -86,12 +83,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       setError(''); // Clear any previous errors
       if (prev.includes(roleName)) {
         // Don't allow removing all roles - user must have at least one role
-        if (prev.length > 1) {
-          return prev.filter(r => r !== roleName);
-        } else {
-          setError("User must have at least one role");
-          return prev;
-        }
         if (prev.length > 1) {
           return prev.filter(r => r !== roleName);
         } else {

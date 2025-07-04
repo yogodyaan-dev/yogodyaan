@@ -153,6 +153,9 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
         const { error: insertError } = await supabase
           .from('user_roles')
           .insert(roleRecords)
+        
+        if (insertError) throw insertError
+      }
       
       // 6. Log role change for history
       const changeDetails = {

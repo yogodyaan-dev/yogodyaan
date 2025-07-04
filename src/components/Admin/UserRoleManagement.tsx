@@ -105,7 +105,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       
       if (fetchError) throw fetchError
 
-      const existingRoles = existingRoleData?.flatMap(item => item.roles?.map(role => role.name) || []) || []
+      const existingRoles = existingRoleData?.map(item => item.roles?.name).filter(Boolean) || []
       
       // 2. Get IDs for all selected roles
       const { data: roleData, error: roleError } = await supabase

@@ -34,8 +34,11 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
   const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    fetchAvailableRoles()
-    fetchRoleChangeHistory()
+    // Reset selected roles to match current roles on component mount or when currentRoles changes
+    setSelectedRoles([...currentRoles]);
+    // Then fetch other data
+    fetchAvailableRoles();
+    fetchRoleChangeHistory();
   }, [userId])
 
   const fetchAvailableRoles = async () => {
@@ -75,14 +78,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
     }
   }
   
-  // Load cached role selections when component mounts
-  useEffect(() => {
-    const cachedRoles = localStorage.getItem(`userRoles_${userId}`);
-    if (cachedRoles) {
-      setSelectedRoles(JSON.parse(cachedRoles));
-    }
-  }, [userId])
-
   const handleRoleToggle = (roleName: string) => {
     setSelectedRoles(prev => {
       if (prev.includes(roleName)) {
@@ -166,9 +161,6 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       setSuccess('User roles updated successfully')
       onRoleUpdate(selectedRoles)
       
-      // Store the updated roles in localStorage for this user
-      localStorage.setItem(`userRoles_${userId}`, JSON.stringify(selectedRoles));
-      
       // 6. Log role change for history
       const changeDetails = {
         user_id: userId,
@@ -249,9 +241,9 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
         <div>
           <h4 className="font-medium text-gray-900 mb-3">Current Roles</h4>
           <div className="bg-gray-50 p-4 rounded-lg">
-            {currentRoles && currentRoles.length > 0 ? (
+            {selectedRoles && selectedRoles.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {currentRoles.map((role) => (
+                {selectedRoles.map((role) => (
                   <span 
                     key={role} 
                     className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm capitalize"

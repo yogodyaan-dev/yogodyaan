@@ -187,12 +187,28 @@ export function AdminDashboard() {
   }
 
   // Update user roles in the UI
-  const handleUpdateUserRoles = (newRoles: string[]) => {
+  const handleUpdateUserRoles = (newRoles: string[] = []) => {
     if (selectedUser) {
-      setSelectedUser({
+      // Create a new reference for selectedUser to ensure React detects the change
+      const updatedUser = {
         ...selectedUser,
-        user_roles: newRoles
-      })
+        user_roles: [...newRoles], // Create a new array reference
+        experience_level: newRoles.includes('super_admin') ? 'super_admin' :
+                         newRoles.includes('admin') ? 'admin' :
+                         newRoles.includes('instructor') ? 'instructor' :
+                         newRoles.includes('mantra_curator') ? 'mantra_curator' :
+                         'user'
+      };
+      
+      // Update the selectedUser state
+      setSelectedUser(updatedUser);
+      
+      // Also update the user in the profiles list to reflect changes immediately
+      setProfiles(prev => prev.map(profile => 
+        profile.user_id === selectedUser.user_id 
+          ? { ...profile, user_roles: [...newRoles], experience_level: updatedUser.experience_level }
+          : profile
+      ));
     }
   }
 

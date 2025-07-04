@@ -103,9 +103,10 @@ export function FormSubmissions() {
       }
       
       alert('Updated successfully!');
+    } catch (error: any) {
       console.error('Error updating status:', error);
       alert('Error updating: ' + (error.message || 'An unknown error occurred'));
-      console.error('Error updating submission:', error)
+    } finally {
       setLoading(false);
     }
   }

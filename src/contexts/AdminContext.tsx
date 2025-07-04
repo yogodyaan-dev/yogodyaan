@@ -2,6 +2,12 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
+interface UserRoleData {
+  roles: {
+    name: string
+  } | null
+}
+
 interface AdminContextType {
   admin: User | null
   loading: boolean
@@ -40,7 +46,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('roles(name)')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id) as { data: UserRoleData[] | null, error: any }
         
       console.log('Role check result:', { roleData, roleError });
       

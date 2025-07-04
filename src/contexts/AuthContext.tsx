@@ -3,6 +3,12 @@ import { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { Session } from '@supabase/supabase-js'
 
+interface UserRoleData {
+  roles: {
+    name: string
+  } | null
+}
+
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -33,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase
         .from('user_roles')
         .select('roles(name)')
-        .eq('user_id', session.user.id)
+        .eq('user_id', session.user.id) as { data: UserRoleData[] | null, error: any }
         
       if (error) throw error
         

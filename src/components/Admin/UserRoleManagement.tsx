@@ -9,6 +9,13 @@ interface UserRole {
   description: string
 }
 
+interface UserRoleWithRole {
+  role_id: string
+  roles: {
+    name: string
+  } | null
+}
+
 interface RoleChange {
   timestamp: string
   changed_by: string
@@ -118,7 +125,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       const { data: existingRoleData, error: fetchError } = await supabase
         .from('user_roles')
         .select('role_id, roles(name)')
-        .eq('user_id', userId)
+        .eq('user_id', userId) as { data: UserRoleWithRole[] | null, error: any }
       
       if (fetchError) throw fetchError
 

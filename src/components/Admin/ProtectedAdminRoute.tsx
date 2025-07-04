@@ -10,18 +10,18 @@ interface ProtectedAdminRouteProps {
 
 export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
   const { admin, isAdmin, loading } = useAdmin()
-  const { isMantraCurator: authMantraCurator } = useAuth()
-  const { isMantraCurator: adminMantraCurator } = useAdmin()
+  const { userRoles } = useAuth()
   const navigate = useNavigate()
 
-  // Combine curator status from both contexts for backward compatibility
-  const isMantraCurator = authMantraCurator || adminMantraCurator
+  // Check if user has any role that grants admin dashboard access
+  const canAccessAdminDashboard = isAdmin || userRoles.includes('mantra_curator') || 
+                                 userRoles.includes('admin') || userRoles.includes('super_admin')
 
   useEffect(() => {
-    if (!loading && (!admin || (!isAdmin && !isMantraCurator))) {
+    if (!loading && (!admin || !canAccessAdminDashboard)) {
       navigate('/admin/login')
     }
-  }, [admin, isAdmin, isMantraCurator, loading, navigate])
+  }, [admin, isAdmin, canAccessAdminDashboard, loading, navigate])
 
   if (loading) {
     return (
@@ -31,7 +31,7 @@ export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
     )
   }
 
-  if (!admin || (!isAdmin && !isMantraCurator)) {
+  if (!admin || !canAccessAdminDashboard) {
     return null
   }
 

@@ -27,23 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsMantraCurator(false)
       return
     }
-    
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('roles(name)')
-        .eq('user_id', session.user.id)
-        
-      if (error) throw error
-        
-      const roles = data?.map(item => item.roles?.name).filter(Boolean) || []
-      setUserRoles(roles)
-      setIsMantraCurator(roles.includes('mantra_curator'))
-    } catch (error) {
-      console.error('Error fetching user roles:', error)
-      setUserRoles(['user']) // Default fallback role
-      setIsMantraCurator(false)
-    }
   }
 
   useEffect(() => {
@@ -66,6 +49,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchUserRoles(session).finally(() => {
           if (mounted) setLoading(false)
         })
+        return
+      }
+      
+      try {
+        // First try to get roles from user_roles table
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('roles(name)')
+          .eq('user_id', session.user.id)
+          
+        if (error) throw error
+          
+        const roles = data?.map(item => item.roles?.name).filter(Boolean) || []
+        setUserRoles(roles)
+        setIsMantraCurator(roles.includes('mantra_curator'))
+        
+      } catch (error) {
+        console.error('Error fetching user roles:', error)
+        
+        // As a fallback, check the admin_users table
+        try {
+          const { data: adminData } = await supabase
+            .from('admin_users')
+            .select('role')
+            .eq('email', session.user.email)
+            .maybeSingle()
+            
+          if (adminData?.role === 'admin' || adminData?.role === 'super_admin') {
+            setUserRoles([adminData.role])
+            setIsMantraCurator(false)
+          } else {
+            setUserRoles(['user']) // Default fallback role
+            setIsMantraCurator(false)
+          }
+        } catch (adminError) {
+          console.error('Error checking admin status:', adminError)
+          setUserRoles(['user']) // Default fallback role
+          setIsMantraCurator(false)
+        }
       }
     )
 

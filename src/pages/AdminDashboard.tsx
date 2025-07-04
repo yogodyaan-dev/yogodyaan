@@ -378,16 +378,32 @@ export function AdminDashboard() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {user.full_name || 'No name provided'}
+                              {user.full_name || user.email || 'No name provided'}
                             </div>
                             <div className="text-sm text-gray-500">{user.email}</div>
                             {user.phone && <div className="text-sm text-gray-500">{user.phone}</div>}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 capitalize">
-                            {user.experience_level}
-                          </span>
+                          {user.user_roles && user.user_roles.length > 0 ? (
+                            <span className={`px-2 py-1 text-xs rounded-full capitalize ${
+                              user.user_roles.includes('super_admin') ? 'bg-red-100 text-red-800' :
+                              user.user_roles.includes('admin') ? 'bg-blue-100 text-blue-800' :
+                              user.user_roles.includes('instructor') ? 'bg-green-100 text-green-800' :
+                              user.user_roles.includes('mantra_curator') ? 'bg-purple-100 text-purple-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {user.user_roles.includes('super_admin') ? 'Super Admin' :
+                               user.user_roles.includes('admin') ? 'Admin' :
+                               user.user_roles.includes('instructor') ? 'Instructor' :
+                               user.user_roles.includes('mantra_curator') ? 'Curator' :
+                               'User'}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 capitalize">
+                              User
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(user.user_created_at).toLocaleDateString()}

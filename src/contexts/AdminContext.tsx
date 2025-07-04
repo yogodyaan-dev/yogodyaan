@@ -5,9 +5,10 @@ import { supabase } from '../lib/supabase'
 interface AdminContextType {
   admin: User | null
   loading: boolean
+  isAdmin: boolean
+  isMantraCurator: boolean
   signInAdmin: (email: string, password: string) => Promise<void>
   signOutAdmin: () => Promise<void>
-  isAdmin: boolean
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
@@ -16,39 +17,58 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isMantraCurator, setIsMantraCurator] = useState(false)
 
-  const checkAdminStatus = async (user: User | null) => {
+  const checkUserRoles = async (user: User | null) => {
     if (!user) {
       setIsAdmin(false)
+      setIsMantraCurator(false)
       return
     }
 
     try {
-      console.log('Checking admin status for user:', user.email)
+      console.log('Checking roles for user:', user.email)
       
-      const { data, error } = await supabase
+      // Check if user is in admin_users table (legacy admin check)
+      const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
-        .select('role')
+        .select('*')
         .eq('email', user.email)
-        .maybeSingle()
+        .maybeSingle();
+        
+      // Check user roles
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('roles(name)')
+        .eq('user_id', user.id);
+        
+      console.log('Role check result:', { roleData, roleError });
+      
+      // User roles from the user_roles table
+      const userRoles = roleData?.map(item => item.roles?.name).filter(Boolean) || [];
+      
+      // Check if user is admin (either in admin_users table OR has admin role)
+      const isAdminUser = adminData?.role === 'admin' || adminData?.role === 'super_admin' || 
+                         userRoles.includes('admin') || userRoles.includes('super_admin');
+                         
+      // Check if user is a mantra curator
+      const isMantraCuratorUser = userRoles.includes('mantra_curator');
 
-      console.log('Admin check result:', { data, error })
-
-      if (error) {
-        console.error('Admin check error:', error)
+      if (adminError && roleError) {
+        console.error('Role check error:', adminError, roleError);
         // For known admin emails during testing
         if (user.email === 'gourab.master@gmail.com') {
-          console.log('Allowing access for known admin email')
-          setIsAdmin(true)
-          return
+          console.log('Allowing access for known admin email');
+          setIsAdmin(true);
+          setIsMantraCurator(false);
+          return;
         }
-        setIsAdmin(false)
-      } else if (data && data.role) {
-        console.log('User is admin with role:', data.role)
-        setIsAdmin(true)
+        setIsAdmin(false);
+        setIsMantraCurator(false);
       } else {
-        console.log('No admin record found for user')
-        setIsAdmin(false)
+        console.log('User roles:', userRoles);
+        setIsAdmin(isAdminUser);
+        setIsMantraCurator(isMantraCuratorUser);
       }
     } catch (error) {
       // Added better error handling here to prevent uncaught exceptions
@@ -57,10 +77,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       // For known admin emails during testing
       if (user.email === 'gourab.master@gmail.com') {
         console.log('Exception occurred, but allowing access for known admin email')
-        setIsAdmin(true)
-        return
+        setIsAdmin(true);
+        setIsMantraCurator(false);
+        return;
       }
-      setIsAdmin(false)
+      setIsAdmin(false);
+      setIsMantraCurator(false);
     } finally {
       // Make sure we always clear loading state
       // even if there was an error
@@ -78,13 +100,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       console.log('Initial session user:', user?.email)
       setAdmin(user)
       
-      // Wrap checkAdminStatus in try/catch to prevent uncaught errors
+      // Wrap checkUserRoles in try/catch to prevent uncaught errors
       try {
-        checkAdminStatus(user).finally(() => {
+        checkUserRoles(user).finally(() => {
           if (mounted) setLoading(false)
         })
       } catch (error) {
-        console.error('Error in initial admin check:', error)
+        console.error('Error in initial role check:', error)
         if (mounted) setLoading(false)
       }
     }).catch(error => {
@@ -101,13 +123,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state changed, user:', user?.email)
         setAdmin(user)
         
-        // Wrap checkAdminStatus in try/catch to prevent uncaught errors
+        // Wrap checkUserRoles in try/catch to prevent uncaught errors
         try {
-          checkAdminStatus(user).finally(() => {
+          checkUserRoles(user).finally(() => {
             if (mounted) setLoading(false)
           })
         } catch (error) {
-          console.error('Error in auth change admin check:', error)
+          console.error('Error in auth change role check:', error)
           if (mounted) setLoading(false)
         }
       }
@@ -117,7 +139,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, []);
 
   const signInAdmin = async (email: string, password: string) => {
     console.log('Attempting admin sign in for:', email)
@@ -137,45 +159,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     
     // For debugging, allow known admin email to proceed
     if (email === 'gourab.master@gmail.com') {
-      console.log('Allowing access for known admin email during debugging')
-      return
+      console.log('Allowing access for known admin email during debugging');
+      return;
     }
 
-    // Then check if user is admin
-    try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('role')
-        .eq('email', email)
-        .maybeSingle()
-
-      console.log('Admin status check result:', { data, error })
-
-      if (error) {
-        console.error('Admin check failed:', error)
-        // Don't sign out during debugging for known admin
-        if (email !== 'gourab.master@gmail.com') {
-          await supabase.auth.signOut()
-          throw new Error('Access denied. Admin privileges required.')
-        }
-      } else if (!data || !data.role) {
-        console.error('No admin record found')
-        // Don't sign out during debugging for known admin
-        if (email !== 'gourab.master@gmail.com') {
-          await supabase.auth.signOut()
-          throw new Error('Access denied. Admin privileges required.')
-        }
-      }
-    } catch (error) {
-      console.error('Exception during admin check:', error)
-      // Don't sign out during debugging for known admin
-      if (email !== 'gourab.master@gmail.com') {
-        await supabase.auth.signOut()
-        throw error
-      }
-    }
-
-    console.log('Admin sign in successful!')
+    // The rest of the admin checks will happen in the auth change listener via checkUserRoles
+    console.log('Sign in successful, checking admin status...');
   }
 
   const signOutAdmin = async () => {
@@ -189,6 +178,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     signInAdmin,
     signOutAdmin,
     isAdmin,
+    isMantraCurator,
   }
 
   return (

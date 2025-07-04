@@ -2,17 +2,20 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, User, LogOut, ChevronDown, ChevronUp, LayoutDashboard, UserCircle } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { useAdmin } from '../../contexts/AdminContext'
+import { useAdmin as useAdminContext } from '../../contexts/AdminContext'
 import { BookOpen } from 'lucide-react'
 import { Button } from '../UI/Button'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { user, isMantraCurator, signOut } = useAuth()
-  const { isAdmin } = useAdmin()
+  const { user, isMantraCurator: authMantraCurator, signOut } = useAuth()
+  const { isAdmin, isMantraCurator: adminMantraCurator } = useAdminContext()
   const location = useLocation()
   const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Combine curator status from both contexts for backward compatibility
+  const isMantraCurator = authMantraCurator || adminMantraCurator
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -98,8 +101,7 @@ export function Header() {
                     <span className="text-sm font-medium">
                       {getUserDisplayName()}
                       {isAdmin && <span className="text-blue-600 ml-1">(Admin)</span>}
-                      {isMantraCurator && <span className="text-emerald-600 ml-1">(Curator)</span>}
-                      {isMantraCurator && <span className="text-emerald-600 ml-1">(Curator)</span>}
+                      {isMantraCurator && !isAdmin && <span className="text-emerald-600 ml-1">(Curator)</span>}
                     </span>
                   </div>
                   {isDropdownOpen ? (
@@ -197,6 +199,7 @@ export function Header() {
                       <span className="text-sm font-medium">
                         {getUserDisplayName()}
                         {isAdmin && <span className="text-blue-600 ml-1">(Admin)</span>}
+                        {isMantraCurator && !isAdmin && <span className="text-emerald-600 ml-1">(Curator)</span>}
                       </span>
                     </div>
                     

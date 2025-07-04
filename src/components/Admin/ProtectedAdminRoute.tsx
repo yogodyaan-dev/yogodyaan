@@ -10,8 +10,12 @@ interface ProtectedAdminRouteProps {
 
 export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
   const { admin, isAdmin, loading } = useAdmin()
-  const { isMantraCurator } = useAuth()
+  const { isMantraCurator: authMantraCurator } = useAuth()
+  const { isMantraCurator: adminMantraCurator } = useAdmin()
   const navigate = useNavigate()
+
+  // Combine curator status from both contexts for backward compatibility
+  const isMantraCurator = authMantraCurator || adminMantraCurator
 
   useEffect(() => {
     if (!loading && (!admin || (!isAdmin && !isMantraCurator))) {

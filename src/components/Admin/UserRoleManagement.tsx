@@ -32,6 +32,11 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
   const [roleChanges, setRoleChanges] = useState<RoleChange[]>([])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState<string>('')
+  
+  // Initialize selectedRoles with currentRoles on mount
+  useEffect(() => {
+    setSelectedRoles(currentRoles || []);
+  }, [currentRoles]);
 
   useEffect(() => {
     // Reset selected roles to match current roles on component mount or when currentRoles changes
@@ -107,7 +112,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
     try {
       // Get the current user ID at the beginning of the function
       const currentUser = await supabase.auth.getUser()
-      const assignedById = currentUser.data.user?.id
+      const assignedById = currentUser.data.user?.id || null
 
       // 1. Get the current user roles from the database
       const { data: existingRoleData, error: fetchError } = await supabase
@@ -117,6 +122,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       
       if (fetchError) throw fetchError
 
+      // Convert the response data to an array of role names
       const existingRoles = existingRoleData?.map(item => item.roles?.name).filter(Boolean) || []
       
       // 2. Get IDs for all selected roles
@@ -164,7 +170,7 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // 6. Log role change for history
       const changeDetails = {
         user_id: userId,
-        changed_by: assignedById || 'unknown',
+        changed_by: assignedById || 'system',
         old_roles: existingRoles,
         new_roles: selectedRoles,
         timestamp: new Date().toISOString()
@@ -180,9 +186,12 @@ export function UserRoleManagement({ userId, userEmail, currentRoles, onRoleUpda
       // Call the callback with the selected roles to update parent component
       onRoleUpdate(selectedRoles);
       
-      // Clear success message after a delay
-      setTimeout(() => setSuccess(''), 3000)
+      // Call the provided callback to update parent component
+      onRoleUpdate(selectedRoles);
       
+      // Set success message and clear it after delay
+      setSuccess('User roles updated successfully');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Error updating roles:', err.message)
       setError('Failed to update roles: ' + err.message)
